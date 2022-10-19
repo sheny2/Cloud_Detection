@@ -1,0 +1,40 @@
+---
+title: "STA 521 Project 2 Cloud Data Report"
+author: "Yicheng Shen (Student ID: 2806571) & Yunhong Bao (Student ID: 2427527)"
+date: "December 1, 2022"
+header-includes:
+    - \setlength{\parskip}{0em}
+    - \usepackage{setspace}\onehalfspacing
+    - \setlength{\parindent}{2em}
+    - \usepackage{indentfirst}
+    - \usepackage{float}
+output: 
+  pdf_document: 
+    extra_dependencies: ["float"]
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning=F)
+library(mosaic)
+library(GGally)
+library(caret)
+library(ggfortify)
+library(ggbiplot)
+ggplot2::theme_set(ggplot2::theme_bw())
+knitr::opts_chunk$set(fig.align = 'center')
+knitr::opts_chunk$set(fig.pos = "H")
+```
+
+
+\section{Introduction}
+
+\section{}
+
+
+\section{}
+
+
+\section{}
+
+\section{}
