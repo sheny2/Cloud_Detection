@@ -10,7 +10,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning=F)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = F, message = F)
 library(mosaic)
 library(GGally)
 library(caret)
@@ -19,3 +19,74 @@ library(ggbiplot)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
 ```
+
+
+```{r read data and give name}
+image_1 <- read.table("image_data/imagem1.txt")
+image_2 <- read.table("image_data/imagem2.txt")
+image_3 <- read.table("image_data/imagem3.txt")
+var_name <- c("Y_coord", "X_coord", "Cloud", "NDAI", "SD", "CORR", "DF","CF","BF","AF","AN")
+colnames(image_1) = colnames(image_2) = colnames(image_3) <- var_name
+image_1$Cloud <- factor(image_1$Cloud)
+image_2$Cloud <- factor(image_2$Cloud)
+image_3$Cloud <- factor(image_3$Cloud)
+```
+
+```{r summary and dim}
+summary(image_1)
+summary(image_2)
+summary(image_3)
+dim(image_1)
+dim(image_2)
+dim(image_3)
+```
+
+
+```{r feature boxplot}
+# image_1 %>% 
+# ggplot() + geom_boxplot(aes(x=Cloud, y=SD)) 
+
+all_image <- rbind(image_1 %>% mutate(image = "1"), image_2 %>% mutate(image = "2"), image_3 %>% mutate(image = "3"))
+ 
+all_image%>% 
+ggplot() + geom_boxplot(aes(x=Cloud, y=NDAI, color = image)) 
+
+all_image %>% 
+ggplot() + geom_boxplot(aes(x=Cloud, y=SD, color = image)) 
+
+all_image %>% 
+ggplot() + geom_boxplot(aes(x=Cloud, y=CORR, color = image)) 
+```
+
+```{r pairwise, message = F, warning = F}
+all_image %>% 
+  select(Cloud, NDAI, SD, CORR) %>% ggpairs()
+```
+
+```{r cloud map}
+# library(sf)
+# ggplot(data = world) +
+#     geom_sf() +
+#     geom_point(data = image_1, aes(x = X-coord, y = Y-coord), size = 4, 
+#         shape = 23, fill = "darkred") +
+#     coord_sf(xlim = c(-88, -78), ylim = c(0, 33), expand = FALSE)
+
+Palette_1 <- c("gray", "blue", "white")
+
+image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 1) +
+  theme_classic() +
+  scale_colour_manual(values = Palette_1)
+
+image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 1) +
+  theme_classic() +
+  scale_colour_manual(values = Palette_1)
+
+image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 1) +  
+  theme_classic() +
+  scale_colour_manual(values = Palette_1)
+```
+
+
