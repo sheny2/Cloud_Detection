@@ -16,10 +16,13 @@ library(GGally)
 library(caret)
 library(ggfortify)
 library(ggbiplot)
+library(gridExtra)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
 ```
 
+
+## EDA 
 
 ```{r read data and give name}
 image_1 <- read.table("image_data/imagem1.txt")
@@ -71,22 +74,82 @@ all_image %>%
 #         shape = 23, fill = "darkred") +
 #     coord_sf(xlim = c(-88, -78), ylim = c(0, 33), expand = FALSE)
 
-Palette_1 <- c("gray", "blue", "white")
+Palette_1 <- c("gray","black", "white")
 
-image_1 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 1) +
-  theme_classic() +
+map_1 <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_void() + theme(legend.position = "none") + 
   scale_colour_manual(values = Palette_1)
 
-image_2 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 1) +
-  theme_classic() +
-  scale_colour_manual(values = Palette_1)
+map_2 <- image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size =  0.5) +
+  theme_void() + theme(legend.position = "none") + 
+  scale_colour_manual(values = Palette_1) 
 
-image_3 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 1) +  
-  theme_classic() +
+map_3 <- image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_void() + theme(legend.position = "none") + 
   scale_colour_manual(values = Palette_1)
+map_1
+map_2
+map_3
 ```
 
+```{r, fig.width=12,fig.height=4}
+grid.arrange(arrangeGrob(map_1 + theme(legend.position="none"),
+                         map_2 + theme(legend.position="none"),
+                         map_3 + theme(legend.position="none"),
+                         nrow = 1))
+```
+
+
+```{r}
+Palette_2 <- c("gray", "white")
+
+map1 <- image_1 %>%
+  filter(Cloud != 0) %>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map2 <- image_2 %>%
+  filter(Cloud != 0) %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_dark() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map3 <- image_3 %>%
+  filter(Cloud != 0) %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_dark() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map1
+map2
+map3
+```
+
+```{r, fig.width=12,fig.height=4}
+map_legend <- lemon::g_legend(map1 +  guides(colour = guide_legend(nrow = 1)))
+
+grid.arrange(arrangeGrob(map1 + theme(legend.position="none"),
+                         map2 + theme(legend.position="none"),
+                         map3 + theme(legend.position="none"),
+                         nrow = 1),
+             map_legend, nrow = 2, heights = c(10, 1))
+```
+
+
+
+
+## Model Fitting 
+```{r glm model}
+M1.glm <- glm(Cloud~NDAI+SD+CORR, data=all_image, family = 'binomial')
+summary(M1.glm)
+```
+
+```{r}
+M2.glm <- glm(Cloud~NDAI+SD+CORR, data=all_image %>% filter(Cloud != 0), family = 'binomial')
+summary(M2.glm)
+```
 
