@@ -10,7 +10,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = F, message = F)
+knitr::opts_chunk$set(echo = T, eval = F, cache = TRUE, warning = F, message = F)
 library(mosaic)
 library(GGally)
 library(caret)
@@ -44,6 +44,13 @@ dim(image_2)
 dim(image_3)
 ```
 
+```{r}
+any(apply(image_1, 2, is.na))
+any(apply(image_2, 2, is.na))
+any(apply(image_3, 2, is.na))
+```
+
+
 
 ```{r feature boxplot}
 # image_1 %>% 
@@ -52,19 +59,27 @@ dim(image_3)
 all_image <- rbind(image_1 %>% mutate(image = "1"), image_2 %>% mutate(image = "2"), image_3 %>% mutate(image = "3"))
  
 all_image%>% 
-ggplot() + geom_boxplot(aes(x=Cloud, y=NDAI, color = image)) 
+  ggplot() + geom_boxplot(aes(x=Cloud, y=NDAI, color = image)) 
 
 all_image %>% 
-ggplot() + geom_boxplot(aes(x=Cloud, y=SD, color = image)) 
+  ggplot() + geom_boxplot(aes(x=Cloud, y=SD, color = image)) 
 
 all_image %>% 
-ggplot() + geom_boxplot(aes(x=Cloud, y=CORR, color = image)) 
+  ggplot() + geom_boxplot(aes(x=Cloud, y=CORR, color = image)) 
 ```
+
 
 ```{r pairwise, message = F, warning = F}
-all_image %>% 
+image_1 %>%
+  select(Cloud, NDAI, SD, CORR) %>% ggpairs()
+
+image_2 %>%
+  select(Cloud, NDAI, SD, CORR) %>% ggpairs()
+
+image_3 %>%
   select(Cloud, NDAI, SD, CORR) %>% ggpairs()
 ```
+
 
 ```{r cloud map}
 # library(sf)
@@ -78,36 +93,41 @@ Palette_1 <- c("gray","black", "white")
 
 map_1 <- image_1 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
-  theme_void() + theme(legend.position = "none") + 
+  theme_map() + theme(legend.position = "none") +
+  labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_1)
 
 map_2 <- image_2 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size =  0.5) +
-  theme_void() + theme(legend.position = "none") + 
+  theme_map() + theme(legend.position = "none") +
+  labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_1) 
 
 map_3 <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
-  theme_void() + theme(legend.position = "none") + 
+  theme_map() + theme(legend.position = "none") +
+  labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_1)
-map_1
-map_2
-map_3
+# map_1
+# map_2
+# map_3
 ```
 
-```{r, fig.width=12,fig.height=4}
-grid.arrange(arrangeGrob(map_1 + theme(legend.position="none"),
-                         map_2 + theme(legend.position="none"),
-                         map_3 + theme(legend.position="none"),
+```{r arranged map, fig.width=12,fig.height=4}
+grid.arrange(arrangeGrob(map_1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map_2 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map_3 + ggeasy::easy_center_title() + theme(legend.position="none"),
                          nrow = 1))
 ```
 
 
-```{r}
+*Better map?*
+
+```{r new map}
 Palette_2 <- c("gray", "white")
 
 map1 <- image_1 %>%
-  filter(Cloud != 0) %>% 
+  filter(Cloud != 0) %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
   theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_2)
@@ -123,33 +143,93 @@ map3 <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
   theme_dark() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_2)
-
-map1
-map2
-map3
+# map1
+# map2
+# map3
 ```
 
-```{r, fig.width=12,fig.height=4}
+```{r arrange map, fig.width=12,fig.height=4}
 map_legend <- lemon::g_legend(map1 +  guides(colour = guide_legend(nrow = 1)))
 
-grid.arrange(arrangeGrob(map1 + theme(legend.position="none"),
-                         map2 + theme(legend.position="none"),
-                         map3 + theme(legend.position="none"),
+grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map2 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map3 + ggeasy::easy_center_title() + theme(legend.position="none"),
                          nrow = 1),
              map_legend, nrow = 2, heights = c(10, 1))
 ```
 
 
+```{r 1 covariate, fig.width=12,fig.height=3.5}
+NDAI_plot <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
+
+SD_plot <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
+
+CORR_plot <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+
+
+grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
+             SD_plot + ggeasy::easy_center_title(),
+             CORR_plot + ggeasy::easy_center_title(),
+             nrow = 1)
+```
+
+
+```{r 2 covariate, fig.width=12,fig.height=3.5}
+NDAI_plot <- image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+SD_plot <- image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+CORR_plot <- image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
+             SD_plot + ggeasy::easy_center_title(),
+             CORR_plot + ggeasy::easy_center_title(),
+             nrow = 1)
+```
+
+```{r 3 covariate, fig.width=12,fig.height=3.5}
+NDAI_plot <- image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
+  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
+  scale_color_gradient(low="black", high="white")
+
+SD_plot <- image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
+  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
+  scale_color_gradient(low="black", high="white")
+
+CORR_plot <- image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
+  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
+  scale_color_gradient(low="black", high="white")
+
+grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
+             SD_plot + ggeasy::easy_center_title(),
+             CORR_plot + ggeasy::easy_center_title(),
+             nrow = 1)
+```
 
 
 ## Model Fitting 
 ```{r glm model}
-M1.glm <- glm(Cloud~NDAI+SD+CORR, data=all_image, family = 'binomial')
+M1.glm <- glm(Cloud ~ NDAI + SD + CORR, data = all_image, family = 'binomial')
 summary(M1.glm)
 ```
 
 ```{r}
-M2.glm <- glm(Cloud~NDAI+SD+CORR, data=all_image %>% filter(Cloud != 0), family = 'binomial')
+M2.glm <- glm(Cloud ~ NDAI + SD + CORR, data = all_image %>% filter(Cloud != 0), family = 'binomial')
 summary(M2.glm)
 ```
 
