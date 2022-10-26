@@ -1,2 +1,5 @@
-# STA521-Project-2
-Project 2 of STA 521
+# STA 521: Project 2 
+
+The project is a case study of cloud detection algorithm. 
+
+
