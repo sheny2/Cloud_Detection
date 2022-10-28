@@ -15,7 +15,6 @@ library(mosaic)
 library(GGally)
 library(caret)
 library(ggfortify)
-library(ggbiplot)
 library(gridExtra)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
@@ -23,6 +22,8 @@ knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
 
 
 ## EDA 
+
+*scale in regression *
 
 ```{r read data and give name}
 image_1 <- read.table("image_data/imagem1.txt")
@@ -208,7 +209,7 @@ NDAI_plot <- image_3 %>%
 SD_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
   theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
-  scale_color_gradient(low="black", high="white")
+  scale_color_gradient(low="gray", high="black")
 
 CORR_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
@@ -221,15 +222,78 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
              nrow = 1)
 ```
 
+```{r}
+image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = DF), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
 
-## Model Fitting 
-```{r glm model}
-M1.glm <- glm(Cloud ~ NDAI + SD + CORR, data = all_image, family = 'binomial')
-summary(M1.glm)
+image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CF), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+```
+
+
+## Data Preparation 
+
+```{r}
+set.seed(8848)
+sample_index <- sample(nrow(image_1), nrow(image_1)*0.8)
+image_1_train <- image_1[sample_index,]
+image_1_test <- image_1[-sample_index,]
 ```
 
 ```{r}
-M2.glm <- glm(Cloud ~ NDAI + SD + CORR, data = all_image %>% filter(Cloud != 0), family = 'binomial')
-summary(M2.glm)
+# summary(image_1_train[,1:2])
+# 
+# quantile(image_1_train$Y_coord, c(0.2, 0.4, 0.6, 0.8))
+# 
+# quantile(image_1_train$X_coord, c(0.5))
+
+image_1_folder_1 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0)) <= Y_coord, Y_coord  < quantile(image_1_train$Y_coord, c(0.2)) )
+image_1_folder_2 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.4)) )
+image_1_folder_3 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.6)) )
+image_1_folder_4 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.8)) )
+image_1_folder_5 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.8)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(1.0)) )
+image_1_folder_6 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.2)) )
+image_1_folder_7 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.4)) )
+image_1_folder_8 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.6)) )
+image_1_folder_9 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.8)) )
+image_1_folder_10 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.8)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(1)) )
+
+image_1_CV <- rbind(image_1_folder_1 %>% mutate(folder = "1"),
+      image_1_folder_2 %>% mutate(folder = "2"),
+      image_1_folder_3 %>% mutate(folder = "3"),
+      image_1_folder_4 %>% mutate(folder = "4"),
+      image_1_folder_5 %>% mutate(folder = "5"),
+      image_1_folder_6 %>% mutate(folder = "6"),
+      image_1_folder_7 %>% mutate(folder = "7"),
+      image_1_folder_8 %>% mutate(folder = "8"),
+      image_1_folder_9 %>% mutate(folder = "9"),
+      image_1_folder_10 %>% mutate(folder = "10"))
+
+image_1_CV %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = folder), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
 ```
+
+
+
+
+## Model Fitting 
+
+```{r}
+M1.glm <- glm(Cloud ~ NDAI + SD + CORR + DF + CF + BF + AF + AN , data = image_1 %>% filter(Cloud != 0), family = 'binomial')
+summary(M1.glm)
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
 
