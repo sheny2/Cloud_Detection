@@ -209,7 +209,7 @@ NDAI_plot <- image_3 %>%
 SD_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
   theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
-  scale_color_gradient(low="gray", high="black")
+  scale_color_gradient(low="black", high="white")
 
 CORR_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
@@ -230,6 +230,18 @@ image_1 %>%
 image_1 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CF), size = 0.5) +
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+
+image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = BF), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+
+image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = AF), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+
+image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = AN), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
 ```
 
 
@@ -237,43 +249,69 @@ image_1 %>%
 
 ```{r}
 set.seed(8848)
-sample_index <- sample(nrow(image_1), nrow(image_1)*0.8)
-image_1_train <- image_1[sample_index,]
-image_1_test <- image_1[-sample_index,]
+sample_index_1 <- sample(nrow(image_1), nrow(image_1)*0.8)
+image_1_train <- image_1[sample_index_1,]
+image_1_test <- image_1[-sample_index_1,]
+sample_index_2 <- sample(nrow(image_2), nrow(image_2)*0.8)
+image_2_train <- image_2[sample_index_2,]
+image_2_test <- image_2[-sample_index_2,]
+sample_index_3 <- sample(nrow(image_3), nrow(image_3)*0.8)
+image_3_train <- image_3[sample_index_3,]
+image_3_test <- image_3[-sample_index_3,]
 ```
 
 ```{r}
 # summary(image_1_train[,1:2])
-# 
+# quantile(image_1_train$X_coord, c(0.5))
 # quantile(image_1_train$Y_coord, c(0.2, 0.4, 0.6, 0.8))
 # 
-# quantile(image_1_train$X_coord, c(0.5))
 
-image_1_folder_1 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0)) <= Y_coord, Y_coord  < quantile(image_1_train$Y_coord, c(0.2)) )
-image_1_folder_2 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.4)) )
-image_1_folder_3 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.6)) )
-image_1_folder_4 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.8)) )
-image_1_folder_5 <- image_1_train %>% filter(X_coord < 218, quantile(image_1_train$Y_coord, c(0.8)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(1.0)) )
-image_1_folder_6 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.2)) )
-image_1_folder_7 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.4)) )
-image_1_folder_8 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.6)) )
-image_1_folder_9 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(0.8)) )
-image_1_folder_10 <- image_1_train %>% filter(X_coord >= 218, quantile(image_1_train$Y_coord, c(0.8)) <= Y_coord, Y_coord < quantile(image_1_train$Y_coord, c(1)) )
+seperate_fold <- function(train_data) {
+ 
+fold_1 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0)) <= Y_coord, Y_coord  < quantile(train_data$Y_coord, c(0.2)) )
+fold_2 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.4)) )
+fold_3 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.6)) )
+fold_4 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.8)) )
+fold_5 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.8)) <= Y_coord, Y_coord <= quantile(train_data$Y_coord, c(1.0)) )
+fold_6 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.2)) )
+fold_7 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.4)) )
+fold_8 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.6)) )
+fold_9 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.8)) )
+fold_10 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.8)) <= Y_coord, Y_coord <= quantile(train_data$Y_coord, c(1)) )
 
-image_1_CV <- rbind(image_1_folder_1 %>% mutate(folder = "1"),
-      image_1_folder_2 %>% mutate(folder = "2"),
-      image_1_folder_3 %>% mutate(folder = "3"),
-      image_1_folder_4 %>% mutate(folder = "4"),
-      image_1_folder_5 %>% mutate(folder = "5"),
-      image_1_folder_6 %>% mutate(folder = "6"),
-      image_1_folder_7 %>% mutate(folder = "7"),
-      image_1_folder_8 %>% mutate(folder = "8"),
-      image_1_folder_9 %>% mutate(folder = "9"),
-      image_1_folder_10 %>% mutate(folder = "10"))
+return( rbind(fold_1 %>% mutate(fold = "1"),
+      fold_2 %>% mutate(fold = "2"),
+      fold_3 %>% mutate(fold = "3"),
+      fold_4 %>% mutate(fold = "4"),
+      fold_5 %>% mutate(fold = "5"),
+      fold_6 %>% mutate(fold = "6"),
+      fold_7 %>% mutate(fold = "7"),
+      fold_8 %>% mutate(fold = "8"),
+      fold_9 %>% mutate(fold = "9"),
+      fold_10 %>% mutate(fold = "10")) ) 
+}
+
+image_1_CV <- seperate_fold(image_1_train)
+image_2_CV <- seperate_fold(image_2_train)
+image_3_CV <- seperate_fold(image_3_train)
+
 
 image_1_CV %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = folder), size = 0.5) +
-  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = fold), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
+image_2_CV %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = fold), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
+image_3_CV %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = fold), size = 0.5) +
+  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none") 
+
+
+image_all_CV <- rbind(image_1_CV,image_2_CV,image_3_CV)
+
+dim(image_all_CV)
+
+table(image_all_CV$fold)
 ```
 
 
