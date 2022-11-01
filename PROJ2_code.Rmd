@@ -48,7 +48,7 @@ dim(image_2)
 dim(image_3)
 ```
 
-```{r}
+```{r check na}
 any(apply(image_1, 2, is.na))
 any(apply(image_2, 2, is.na))
 any(apply(image_3, 2, is.na))
@@ -174,7 +174,7 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 ```
 
 
-```{r 1 covariate, fig.width=12,fig.height=3.5}
+```{r image 1 covariate map, fig.width=12,fig.height=3.5}
 NDAI_plot <- image_1 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
@@ -195,7 +195,7 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
 ```
 
 
-```{r 2 covariate, fig.width=12,fig.height=3.5}
+```{r image 2 covariate map, fig.width=12,fig.height=3.5}
 NDAI_plot <- image_2 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
   theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
@@ -215,7 +215,7 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
 ```
 
 
-```{r 3 covariate, fig.width=12,fig.height=3.5}
+```{r image 3 covariate map, fig.width=12,fig.height=3.5}
 NDAI_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
   theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
@@ -261,7 +261,7 @@ image_1 %>%
 ```
 
 
-```{r, eval = F, echo = F}
+```{r filter zero, eval = F, echo = F}
 # filter or not??????
 image_1 <- image_1 %>% filter(Cloud != "0") 
 image_2 <- image_2 %>% filter(Cloud != "0") 
@@ -269,7 +269,7 @@ image_3 <- image_3 %>% filter(Cloud != "0")
 ```
 
 
-```{r, fig.width=12, fig.height=3}
+```{r hist covariate, fig.width=12, fig.height=3}
 hist_1 <- image_1 %>% 
   ggplot(aes(x = NDAI)) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
@@ -349,7 +349,7 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 
 
-```{r, fig.width=12, fig.height=3.5}
+```{r angle hist, fig.width=12, fig.height=3.5}
 hist_1 <- image_1 %>% 
   ggplot(aes(x = (DF))) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
@@ -374,7 +374,7 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 **Should we exclude zero???**
 
-```{r}
+```{r index groups}
 set.seed(8848)
 sample_index_1 <- sample(nrow(image_1), nrow(image_1)*0.8)
 image_1_train <- image_1[sample_index_1,]
@@ -388,7 +388,7 @@ image_3_test <- image_3[-sample_index_3,]
 ```
 
 
-```{r}
+```{r 10 CV groups}
 # summary(image_1_train[,1:2])
 # quantile(image_1_train$X_coord, c(0.5))
 # quantile(image_1_train$Y_coord, c(0.2, 0.4, 0.6, 0.8))
@@ -446,7 +446,7 @@ table(image_all_CV$fold)
 
 ## Model Fitting & Validation
 
-```{r}
+```{r logistic}
 image_1_train_binary <- image_1_train %>% filter(Cloud != 0) 
 M1.glm <- glm(Cloud ~ NDAI + SD + CORR + DF + CF + BF + AF + AN , data = image_1_train, family = 'binomial')
 summary(M1.glm)
@@ -457,7 +457,7 @@ mean(logit.model_pred != (image_1_test %>% filter(Cloud != 0))$Cloud)
 ```
 
 
-```{r}
+```{r LDA}
 LDA_model <-
   lda(Cloud ~ NDAI + SD + CORR,
     data = image_1_train
@@ -468,7 +468,7 @@ mean(predict(LDA_model, image_1_test)$class != image_1_test$Cloud)
 ```
 
 
-```{r}
+```{r QDA}
 QDA_model <-
   lda(Cloud ~ NDAI + SD + CORR,
     data = image_1_train
@@ -477,7 +477,7 @@ mean(predict(QDA_model, image_1_test)$class != image_1_test$Cloud)
 ```
 
 
-```{r}
+```{r NB}
 naive_bayes <- naiveBayes(Cloud ~ NDAI + SD + CORR, 
                 data=image_1_train)
 mean(predict(naive_bayes, image_1_test) != image_1_test$Cloud)
