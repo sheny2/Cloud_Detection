@@ -16,6 +16,9 @@ library(GGally)
 library(caret)
 library(ggfortify)
 library(gridExtra)
+library(MASS)
+library(e1071)
+library(class)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
 ```
@@ -247,6 +250,8 @@ image_1 %>%
 
 ## Data Preparation 
 
+**Should we exclude zero???**
+
 ```{r}
 set.seed(8848)
 sample_index_1 <- sample(nrow(image_1), nrow(image_1)*0.8)
@@ -306,6 +311,7 @@ image_3_CV %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = fold), size = 0.5) +
   theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none") 
 
+table(image_1_CV$fold)
 
 image_all_CV <- rbind(image_1_CV,image_2_CV,image_3_CV)
 
@@ -315,23 +321,39 @@ table(image_all_CV$fold)
 ```
 
 
-
-
 ## Model Fitting 
 
 ```{r}
-M1.glm <- glm(Cloud ~ NDAI + SD + CORR + DF + CF + BF + AF + AN , data = image_1 %>% filter(Cloud != 0), family = 'binomial')
+image_1_train_binary <- image_1_train %>% filter(Cloud != 0) 
+M1.glm <- glm(Cloud ~ NDAI + SD + CORR + DF + CF + BF + AF + AN , data = image_1_train, family = 'binomial')
 summary(M1.glm)
+
+prob <- predict(M1.glm, image_1_test %>% filter(Cloud != 0) , type="response")
+logit.model_pred <- ifelse(prob > 0.5, 1, 0)
+mean(logit.model_pred != (image_1_test %>% filter(Cloud != 0))$Cloud)
 ```
 
 
 ```{r}
-
+LDA_model <-
+  lda(Cloud ~ NDAI + SD + CORR,
+    data = image_1_train
+  )
+mean(predict(LDA_model, image_1_test)$class != image_1_test$Cloud)
 ```
 
 
+```{r}
+QDA_model <-
+  lda(Cloud ~ NDAI + SD + CORR,
+    data = image_1_train
+  )
+mean(predict(QDA_model, image_1_test)$class != image_1_test$Cloud)
+```
 
 
-
-
-
+```{r}
+naive_bayes <- naiveBayes(Cloud ~ NDAI + SD + CORR, 
+                data=image_1_train)
+mean(predict(naive_bayes, image_1_test) != image_1_test$Cloud)
+```
