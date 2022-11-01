@@ -55,6 +55,7 @@ any(apply(image_3, 2, is.na))
 ```
 
 
+
 ```{r feature boxplot}
 # image_1 %>% 
 # ggplot() + geom_boxplot(aes(x=Cloud, y=SD)) 
@@ -260,6 +261,14 @@ image_1 %>%
 ```
 
 
+```{r, eval = F, echo = F}
+# filter or not??????
+image_1 <- image_1 %>% filter(Cloud != "0") 
+image_2 <- image_2 %>% filter(Cloud != "0") 
+image_3 <- image_3 %>% filter(Cloud != "0") 
+```
+
+
 ```{r, fig.width=12, fig.height=3}
 hist_1 <- image_1 %>% 
   ggplot(aes(x = NDAI)) +
@@ -378,6 +387,7 @@ image_3_train <- image_3[sample_index_3,]
 image_3_test <- image_3[-sample_index_3,]
 ```
 
+
 ```{r}
 # summary(image_1_train[,1:2])
 # quantile(image_1_train$X_coord, c(0.5))
@@ -453,6 +463,8 @@ LDA_model <-
     data = image_1_train
   )
 mean(predict(LDA_model, image_1_test)$class != image_1_test$Cloud)
+
+# klaR::partimat(Cloud ~ NDAI + SD + CORR, data = image_1_train, method = "lda")
 ```
 
 
@@ -469,6 +481,30 @@ mean(predict(QDA_model, image_1_test)$class != image_1_test$Cloud)
 naive_bayes <- naiveBayes(Cloud ~ NDAI + SD + CORR, 
                 data=image_1_train)
 mean(predict(naive_bayes, image_1_test) != image_1_test$Cloud)
+```
+
+
+
+```{r PCA visual}
+trn_pca <- image_1_train %>% 
+  filter(Cloud != "0") %>% 
+  dplyr::select(-Cloud)  %>% 
+  FactoMineR::PCA(graph = F)
+
+proj <- trn_pca$ind$coord[, 1:2]  %>% 
+  data.frame()  %>% 
+  tibble()  %>% 
+  mutate(Cloud_True = (image_1_train %>% 
+  filter(Cloud != "0") )$Cloud)
+
+p1 <- proj %>% 
+  ggplot(aes(x = Dim.1, y = Dim.2)) +
+  geom_point(aes(color = Cloud_True)) +
+  labs(x = "PC1", y = "PC2", title = "PCA Projections") 
+
+p2 <- plot(trn_pca, choix = "var")
+
+p1
 ```
 
 
