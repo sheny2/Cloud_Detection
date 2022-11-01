@@ -203,6 +203,7 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
              nrow = 1)
 ```
 
+
 ```{r 3 covariate, fig.width=12,fig.height=3.5}
 NDAI_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
@@ -225,7 +226,8 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
              nrow = 1)
 ```
 
-```{r}
+
+```{r angle map}
 image_1 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = DF), size = 0.5) +
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
@@ -245,6 +247,85 @@ image_1 %>%
 image_1 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = AN), size = 0.5) +
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+```
+
+
+```{r, fig.width=12, fig.height=3}
+hist_1 <- image_1 %>% 
+  ggplot(aes(x = NDAI)) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- image_2 %>% 
+  ggplot(aes(x = NDAI)) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- image_3 %>% 
+  ggplot(aes(x = NDAI)) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             nrow = 1)
+
+# +
+#   scale_fill_manual(values = c("steelblue1", "hotpink1")) +
+#   scale_color_manual(values = c("steelblue1", "hotpink1")) +
+#   theme_bw()
+
+hist_1 <- image_1 %>% 
+  ggplot(aes(x = SD)) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- image_2 %>% 
+  ggplot(aes(x = SD)) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- image_3 %>% 
+  ggplot(aes(x = SD)) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             nrow = 1)
+
+
+hist_1 <- image_1 %>% 
+  ggplot(aes(x = log(SD))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- image_2 %>% 
+  ggplot(aes(x = log(SD))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- image_3 %>% 
+  ggplot(aes(x = log(SD))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             nrow = 1)
+
+
+
+hist_1 <- image_1 %>% 
+  ggplot(aes(x = (CORR))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- image_2 %>% 
+  ggplot(aes(x = (CORR))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- image_3 %>% 
+  ggplot(aes(x = (CORR))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             nrow = 1)
 ```
 
 
