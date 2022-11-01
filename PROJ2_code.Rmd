@@ -26,7 +26,7 @@ knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
 
 ## EDA 
 
-*scale in regression *
+*scale in regression*
 
 ```{r read data and give name}
 image_1 <- read.table("image_data/imagem1.txt")
@@ -53,7 +53,6 @@ any(apply(image_1, 2, is.na))
 any(apply(image_2, 2, is.na))
 any(apply(image_3, 2, is.na))
 ```
-
 
 
 ```{r feature boxplot}
@@ -85,7 +84,8 @@ image_3 %>%
 ```
 
 
-```{r}
+*Do a PCA on the angle *
+```{r angle corr}
 image_1 %>% dplyr::select(DF:AN) %>% 
   ggpairs()
 image_2 %>% dplyr::select(DF:AN) %>% 
@@ -434,7 +434,7 @@ table(image_all_CV$fold)
 ```
 
 
-## Model Fitting 
+## Model Fitting & Validation
 
 ```{r}
 image_1_train_binary <- image_1_train %>% filter(Cloud != 0) 
@@ -470,3 +470,8 @@ naive_bayes <- naiveBayes(Cloud ~ NDAI + SD + CORR,
                 data=image_1_train)
 mean(predict(naive_bayes, image_1_test) != image_1_test$Cloud)
 ```
+
+
+## Testing
+
+
