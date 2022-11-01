@@ -85,6 +85,16 @@ image_3 %>%
 ```
 
 
+```{r}
+image_1 %>% dplyr::select(DF:AN) %>% 
+  ggpairs()
+image_2 %>% dplyr::select(DF:AN) %>% 
+  ggpairs()
+image_3 %>% dplyr::select(DF:AN) %>% 
+  ggpairs()
+```
+
+
 ```{r cloud map}
 # library(sf)
 # ggplot(data = world) +
@@ -327,6 +337,28 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
              hist_3 + ggeasy::easy_center_title(),
              nrow = 1)
 ```
+
+
+
+```{r, fig.width=12, fig.height=3.5}
+hist_1 <- image_1 %>% 
+  ggplot(aes(x = (DF))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- image_2 %>% 
+  ggplot(aes(x = (DF))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- image_3 %>% 
+  ggplot(aes(x = (DF))) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             nrow = 1)
+```
+
 
 
 ## Data Preparation 
