@@ -617,7 +617,7 @@ CV_Master <-
         LDA_model[[i]] = lda(paste("train_label ~ ", paste(names(
           train_feature
         ), collapse = "+"), sep = ""),
-        data = dat_CV_train)
+        data = as.matrix(dat_CV_train))
         prediction[[i]] = predict(LDA_model[[i]], dat_CV_test)$class
       }
       
@@ -633,21 +633,21 @@ CV_Master <-
         QDA_model[[i]] = qda(paste("train_label ~ ", paste(names(
           train_feature
         ), collapse = "+"), sep = ""),
-        data = dat_CV_train)
+        data = as.matrix(dat_CV_train))
         prediction[[i]] = predict(QDA_model[[i]], dat_CV_test)$class
       }
     }
     
     if (classifier == "NB")
     {
+      NB_model <- list()
+      prediction <- list()
       for (i in 1:K) {
         dat_CV_train = dat %>% filter(fold_index != i)
         dat_CV_test = dat %>% filter(fold_index == i)
-        NB_model[[i]] = naiveBayes(paste("train_label ~ ", paste(names(
-          train_feature
-        ), collapse = "+"), sep = ""),
-        data = dat_CV_train)
-        prediction[[i]] = predict(NB_model[[i]], dat_CV_test)$class
+        NB_model[[i]] = naiveBayes(dat_CV_train %>% dplyr::select(-train_label, -fold_index), 
+                                   dat_CV_train$train_label)
+        prediction[[i]] = predict(NB_model[[i]], dat_CV_test)
       }
     }
     
@@ -669,6 +669,7 @@ CV_Master <-
   }
 ```
 
+# Remeber to transform variables! log
 
 ```{r}
 set.seed(666)
