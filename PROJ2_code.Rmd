@@ -75,13 +75,13 @@ all_image %>%
 
 ```{r pairwise, message = F, warning = F}
 image_1 %>%
-  select(Cloud, NDAI, SD, CORR) %>% ggpairs()
+  dplyr::select(Cloud, NDAI, SD, CORR) %>% ggpairs()
 
 image_2 %>%
-  select(Cloud, NDAI, SD, CORR) %>% ggpairs()
+  dplyr::select(Cloud, NDAI, SD, CORR) %>% ggpairs()
 
 image_3 %>%
-  select(Cloud, NDAI, SD, CORR) %>% ggpairs()
+  dplyr::select(Cloud, NDAI, SD, CORR) %>% ggpairs()
 ```
 
 
@@ -260,25 +260,25 @@ image_1 %>%
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
 ```
 
-
+# Remove cloud = 0 from here.
 ```{r filter zero, eval = F, echo = F}
 # filter or not??????
-image_1 <- image_1 %>% filter(Cloud != "0") 
-image_2 <- image_2 %>% filter(Cloud != "0") 
-image_3 <- image_3 %>% filter(Cloud != "0") 
+Image_1 <- image_1 %>% filter(Cloud != "0") 
+Image_2 <- image_2 %>% filter(Cloud != "0") 
+Image_3 <- image_3 %>% filter(Cloud != "0") 
 ```
 
 
 ```{r hist covariate, fig.width=12, fig.height=3}
-hist_1 <- image_1 %>% 
+hist_1 <- Image_1 %>% 
   ggplot(aes(x = NDAI)) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_2 <- image_2 %>% 
+hist_2 <- Image_2 %>% 
   ggplot(aes(x = NDAI)) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_3 <- image_3 %>% 
+hist_3 <- Image_3 %>% 
   ggplot(aes(x = NDAI)) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
@@ -292,15 +292,15 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 #   scale_color_manual(values = c("steelblue1", "hotpink1")) +
 #   theme_bw()
 
-hist_1 <- image_1 %>% 
+hist_1 <- Image_1 %>% 
   ggplot(aes(x = SD)) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_2 <- image_2 %>% 
+hist_2 <- Image_2 %>% 
   ggplot(aes(x = SD)) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_3 <- image_3 %>% 
+hist_3 <- Image_3 %>% 
   ggplot(aes(x = SD)) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
@@ -310,15 +310,15 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
              nrow = 1)
 
 
-hist_1 <- image_1 %>% 
+hist_1 <- Image_1 %>% 
   ggplot(aes(x = log(SD))) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_2 <- image_2 %>% 
+hist_2 <- Image_2 %>% 
   ggplot(aes(x = log(SD))) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_3 <- image_3 %>% 
+hist_3 <- Image_3 %>% 
   ggplot(aes(x = log(SD))) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
@@ -329,16 +329,16 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 
 
-hist_1 <- image_1 %>% 
-  ggplot(aes(x = (CORR))) +
+hist_1 <- Image_1 %>% 
+  ggplot(aes(x = CORR )) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_2 <- image_2 %>% 
-  ggplot(aes(x = (CORR))) +
+hist_2 <- Image_2 %>% 
+  ggplot(aes(x = CORR )) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_3 <- image_3 %>% 
-  ggplot(aes(x = (CORR))) +
+hist_3 <- Image_3 %>% 
+  ggplot(aes(x = CORR )) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
 grid.arrange(hist_1 + ggeasy::easy_center_title(),
@@ -350,16 +350,16 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 
 ```{r angle hist, fig.width=12, fig.height=3.5}
-hist_1 <- image_1 %>% 
-  ggplot(aes(x = (DF))) +
+hist_1 <- Image_1 %>% 
+  ggplot(aes(x = (AF))) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_2 <- image_2 %>% 
-  ggplot(aes(x = (DF))) +
+hist_2 <- Image_2 %>% 
+  ggplot(aes(x = (AF))) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
-hist_3 <- image_3 %>% 
-  ggplot(aes(x = (DF))) +
+hist_3 <- Image_3 %>% 
+  ggplot(aes(x = (AF))) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
 
 grid.arrange(hist_1 + ggeasy::easy_center_title(),
@@ -370,123 +370,334 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 
 
-## Data Preparation 
+# 2.Data Preparation 
 
-**Should we exclude zero???**
 
-```{r index groups}
-set.seed(8848)
-sample_index_1 <- sample(nrow(image_1), nrow(image_1)*0.8)
-image_1_train <- image_1[sample_index_1,]
-image_1_test <- image_1[-sample_index_1,]
-sample_index_2 <- sample(nrow(image_2), nrow(image_2)*0.8)
-image_2_train <- image_2[sample_index_2,]
-image_2_test <- image_2[-sample_index_2,]
-sample_index_3 <- sample(nrow(image_3), nrow(image_3)*0.8)
-image_3_train <- image_3[sample_index_3,]
-image_3_test <- image_3[-sample_index_3,]
+# 2.a
+
+
+#### Make a table of availble data: 
+image 1 
+115110 total
+82148 Without 0 
+16430 Test
+65718 Train
+52574 train
+13144 val
+
+
+```{r index groups, eval = F, echo = F}
+# set.seed(8848)
+# sample_index_1 <- sample(nrow(Image_1), nrow(Image_1)*0.8)
+# Image_1_Train <- Image_1[sample_index_1,]
+# train_index_1 <- sample(nrow(Image_1_Train), nrow(Image_1_Train)*0.8)
+# Image_1_val <- Image_1_Train[-train_index_1,]
+# Image_1_train <- Image_1_Train[train_index_1,]
+# Image_1_Test <- Image_1[-sample_index_1,]
+# 
+# 
+# sample_index_2 <- sample(nrow(Image_2), nrow(Image_2)*0.8)
+# Image_2_Train <- Image_2[sample_index_2,]
+# train_index_2 <- sample(nrow(Image_2_Train), nrow(Image_2_Train)*0.8)
+# Image_2_val <- Image_2_Train[-train_index_2,]
+# Image_2_train <- Image_2_Train[train_index_2,]
+# Image_2_Test <- Image_2[-sample_index_2,]
+# 
+# 
+# sample_index_3 <- sample(nrow(Image_3), nrow(Image_3)*0.8)
+# Image_3_Train <- Image_3[sample_index_3,]
+# train_index_3 <- sample(nrow(Image_3_Train), nrow(Image_3_Train)*0.8)
+# Image_3_val <- Image_3_Train[-train_index_3,]
+# Image_3_train <- Image_3_Train[train_index_3,]
+# Image_3_Test <- Image_3[-sample_index_3,]
 ```
 
 
-```{r 10 CV groups}
-# summary(image_1_train[,1:2])
-# quantile(image_1_train$X_coord, c(0.5))
-# quantile(image_1_train$Y_coord, c(0.2, 0.4, 0.6, 0.8))
-# 
+```{r 5 groups, fig.width=12, fig.height=3}
+# summary(Image_1_train[,1:2])
+# quantile(Image_1_train$X_coord, c(0.5))
+# quantile(Image_1_train$Y_coord, c(0.2, 0.4, 0.6, 0.8))
 
 seperate_fold <- function(train_data) {
- 
-fold_1 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0)) <= Y_coord, Y_coord  < quantile(train_data$Y_coord, c(0.2)) )
-fold_2 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.4)) )
-fold_3 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.6)) )
-fold_4 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.8)) )
-fold_5 <- train_data %>% filter(X_coord < quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.8)) <= Y_coord, Y_coord <= quantile(train_data$Y_coord, c(1.0)) )
-fold_6 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.2)) )
-fold_7 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.2)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.4)) )
-fold_8 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.4)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.6)) )
-fold_9 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.6)) <= Y_coord, Y_coord < quantile(train_data$Y_coord, c(0.8)) )
-fold_10 <- train_data %>% filter(X_coord >= quantile(train_data$X_coord, c(0.5)), quantile(train_data$Y_coord, c(0.8)) <= Y_coord, Y_coord <= quantile(train_data$Y_coord, c(1)) )
-
-return( rbind(fold_1 %>% mutate(fold = "1"),
-      fold_2 %>% mutate(fold = "2"),
-      fold_3 %>% mutate(fold = "3"),
-      fold_4 %>% mutate(fold = "4"),
-      fold_5 %>% mutate(fold = "5"),
-      fold_6 %>% mutate(fold = "6"),
-      fold_7 %>% mutate(fold = "7"),
-      fold_8 %>% mutate(fold = "8"),
-      fold_9 %>% mutate(fold = "9"),
-      fold_10 %>% mutate(fold = "10")) ) 
+  
+  fold_1 <- train_data %>% filter( Y_coord  < 383*0.2 )
+  fold_2 <- train_data %>% filter( 383*0.2 <= Y_coord, Y_coord  < 383*0.4 )
+  fold_3 <- train_data %>% filter( 383*0.4 <= Y_coord, Y_coord  < 383*0.6 )
+  fold_4 <- train_data %>% filter( 383*0.6 <= Y_coord, Y_coord  < 383*0.8 )
+  fold_5 <- train_data %>% filter( 383*0.8 <= Y_coord )
+  
+return( rbind(fold_1 %>% mutate(Type = "Test"),
+      fold_2 %>% mutate(Type = "Validation"),
+      fold_3 %>% mutate(Type = "Train"),
+      fold_4 %>% mutate(Type = "Train"),
+      fold_5 %>% mutate(Type = "Train") ) ) 
 }
 
-image_1_CV <- seperate_fold(image_1_train)
-image_2_CV <- seperate_fold(image_2_train)
-image_3_CV <- seperate_fold(image_3_train)
+Cut_1 <- seperate_fold(Image_1)
+Cut_2 <- seperate_fold(Image_2)
+Cut_3 <- seperate_fold(Image_3)
 
 
-image_1_CV %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = fold), size = 0.5) +
+Cut_1_Map <- Cut_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  geom_hline(yintercept = 383*0.2 ) + 
+  geom_hline(yintercept = 383*0.4) + 
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
-image_2_CV %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = fold), size = 0.5) +
+
+Cut_2_Map <- Cut_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  geom_hline(yintercept = 383*0.2) + 
+  geom_hline(yintercept = 383*0.4) + 
   theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
-image_3_CV %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = fold), size = 0.5) +
-  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none") 
 
-table(image_1_CV$fold)
+Cut_3_Map <- Cut_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  geom_hline(yintercept = 383*0.2 ) + 
+  geom_hline(yintercept = 383*0.4) + 
+  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
 
-image_all_CV <- rbind(image_1_CV,image_2_CV,image_3_CV)
+grid.arrange(Cut_1_Map, Cut_2_Map, Cut_3_Map, nrow = 1)
 
-dim(image_all_CV)
+Image_all_Cut <- rbind(Cut_1, Cut_2, Cut_3)
 
-table(image_all_CV$fold)
+# dim(Image_all_CV)
+
+prop.table(table(Image_all_Cut$Type))
+
+Image_all_Cut %>% 
+  group_by(Type) %>% 
+  summarise(`Perct Cloud` = mean(Cloud == "1"))
 ```
 
 
-## Model Fitting & Validation
+```{r 5 KNN groups, fig.width=12, fig.height=3}
+set.seed(8848)
+
+KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)
+KM_2 <- kmeans(Image_2[,1:2], centers = 5, nstart = 25)
+KM_3 <- kmeans(Image_3[,1:2], centers = 5, nstart = 25)
+
+KM_1_Map <- Image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = factor(KM_1$cluster)), size = 0.5) +
+  theme_bw() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +  scale_color_manual(values = c("red", "blue", "green", "green", "green"))  
+
+KM_2_Map <- Image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = factor(KM_2$cluster)), size = 0.5) +
+  theme_bw() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +  scale_color_manual(values = c("red", "blue", "green", "green", "green"))  
+
+KM_3_Map <- Image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = factor(KM_3$cluster)), size = 0.5) +
+  theme_bw() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +  scale_color_manual(values = c("red", "blue", "green", "green", "green"))  
+
+grid.arrange(KM_1_Map, KM_2_Map, KM_3_Map, nrow = 1)
+
+Image_all_KM <- rbind(Image_1 %>% mutate(cluster = KM_1$cluster),
+                      Image_2 %>% mutate(cluster = KM_2$cluster),
+                      Image_3 %>% mutate(cluster = KM_3$cluster))
+
+Image_all_KM <- Image_all_KM %>% 
+  mutate(Type = ifelse(cluster == "1", "Test", "Train"))  %>% 
+  mutate(Type = ifelse(cluster == "2", "Validation", Type)) 
+
+Image_all_KM %>% 
+  group_by(Type) %>% 
+  summarise(`Perct Cloud` = mean(Cloud == "1"))
+```
+
+# 2.b
+
+```{r accuaracy of trival predictor}
+Image_all_Cut %>% 
+  filter(Type == "Validation")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(Accuracy = mean(Predict == Cloud))
+
+Image_all_Cut %>% 
+  filter(Type == "Test")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(Accuracy = mean(Predict == Cloud))
+
+
+Image_all_KM %>% 
+  filter(Type == "Validation")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(Accuracy = mean(Predict == Cloud))
+
+Image_all_KM %>% 
+  filter(Type == "Test")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(Accuracy = mean(Predict == Cloud))
+```
+
+
+# 2.c
+
+```{r}
+pca_result <- prcomp(Image_all_Cut %>% dplyr::select(NDAI:AN), cetner = T, scale. = T) 
+as.matrix(pca_result$rotation )
+
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$NDAI)
+cor( as.numeric(Image_all_Cut$Cloud), log(Image_all_Cut$SD))
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$CORR)
+
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$DF)
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$CF)
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$BF)
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$AF)
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$AN)
+```
+
+
+**For now, choose the first three features.**
+
+# 2d CV Master
+
+write some shit
+
+
+
+# 3. Model Fitting & Validation
+
+# 3.a
+
+
+```{r train and test}
+Image_Train_Cut <- Image_all_Cut %>%  filter(Type != "Test")
+Image_Test_Cut <- Image_all_Cut %>%  filter(Type == "Test")
+Image_Train_KM <- Image_all_KM %>%  filter(Type != "Test")
+Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
+```
+
+
+```{r}
+CV_Master <- function(Classifier, train_coord, train_feature, train_label, K, loss_fun) {
+  
+  # if classifer not in given choice
+
+  fold_index = kmeans(train_coord, centers = K, nstart = 25)
+  dat = cbind(train_feature, train_label)
+  dat$fold_index = fold_index$cluster
+  
+  if (Classifier == "Logistic")
+  {
+  glm_result <- list()
+  prediction <- list()
+  for (i in 1:K){
+   dat_CV_train = dat %>% filter(fold_index != i)
+   dat_CV_test = dat %>% filter(fold_index == i)
+   glm_result[[i]] = glm(paste("train_label ~ ", paste(names(train_feature), collapse = "+" ), sep = "" ), data = dat_CV_train, family = 'binomial')
+    prob = predict(glm_result[[i]], dat_CV_test, type = "response")
+    prediction[[i]] = ifelse(prob > 0.5, 1, -1)
+        }
+  
+  }
+  
+  if (Classifier == "LDA")
+  {
+    
+    
+  }
+  
+  if (Classifier == "QDA")
+  {
+  }
+  
+  
+
+  if (loss_fun == "Accuracy")
+  {
+    Accuracy <- matrix(NA, ncol = K + 1, nrow = 1)
+    for (j in 1:K)
+    { dat_CV_test = dat %>% filter(fold_index == j)
+      Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$train_label)
+    }
+    Accuracy[1, K+1] = mean(Accuracy[1, 1:K])
+    
+  }
+  
+  return(Accuracy)
+}
+```
+
+
+```{r}
+CV_Master(
+  Classifier = "Logistic",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+
+
+CV_Master(
+  Classifier = "Logistic",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 5,
+  loss_fun = "Accuracy"
+)
+
+```
+
+
+
+
+# Model thoughts
 
 ```{r logistic}
-image_1_train_binary <- image_1_train %>% filter(Cloud != 0) 
-M1.glm <- glm(Cloud ~ NDAI + SD + CORR + DF + CF + BF + AF + AN , data = image_1_train, family = 'binomial')
-summary(M1.glm)
 
-prob <- predict(M1.glm, image_1_test %>% filter(Cloud != 0) , type="response")
-logit.model_pred <- ifelse(prob > 0.5, 1, 0)
-mean(logit.model_pred != (image_1_test %>% filter(Cloud != 0))$Cloud)
+train_feature <- Image_Train_Cut[, 4:6]
+train_label <- Image_Train_Cut[, 3]
+
+fold_index = kmeans(train_feature, centers = 5, nstart = 25)
+dat = cbind(train_feature, train_label)
+dat$fold_index = fold_index$cluster
+
+dat_CV_train = dat %>% filter(fold_index != 1)
+dat_CV_test = dat %>% filter(fold_index == 1)
+
+M1.glm <- glm(paste("train_label ~ ", paste(names(train_feature), collapse = "+" ), sep = "" ), data = dat_CV_train, family = 'binomial')
+
+prob <- predict(M1.glm, dat_CV_test , type="response")
+
+prediction <- ifelse(prob > 0.5, 1, 0)
+mean(prediction != dat_CV_test$train_label)
 ```
 
 
 ```{r LDA}
 LDA_model <-
   lda(Cloud ~ NDAI + SD + CORR,
-    data = image_1_train
+    data = Image_1_train
   )
-mean(predict(LDA_model, image_1_test)$class != image_1_test$Cloud)
+mean(predict(LDA_model, Image_1_test)$class != Image_1_test$Cloud)
 
-# klaR::partimat(Cloud ~ NDAI + SD + CORR, data = image_1_train, method = "lda")
+# klaR::partimat(Cloud ~ NDAI + SD + CORR, data = Image_1_train, method = "lda")
 ```
 
 
 ```{r QDA}
 QDA_model <-
   lda(Cloud ~ NDAI + SD + CORR,
-    data = image_1_train
+    data = Image_1_train
   )
-mean(predict(QDA_model, image_1_test)$class != image_1_test$Cloud)
+mean(predict(QDA_model, Image_1_test)$class != Image_1_test$Cloud)
 ```
 
 
 ```{r NB}
 naive_bayes <- naiveBayes(Cloud ~ NDAI + SD + CORR, 
-                data=image_1_train)
-mean(predict(naive_bayes, image_1_test) != image_1_test$Cloud)
+                data=Image_1_train)
+mean(predict(naive_bayes, Image_1_test) != Image_1_test$Cloud)
 ```
 
 
 
 ```{r PCA visual}
-trn_pca <- image_1_train %>% 
+trn_pca <- Image_1_train %>% 
   filter(Cloud != "0") %>% 
   dplyr::select(-Cloud)  %>% 
   FactoMineR::PCA(graph = F)
@@ -494,7 +705,7 @@ trn_pca <- image_1_train %>%
 proj <- trn_pca$ind$coord[, 1:2]  %>% 
   data.frame()  %>% 
   tibble()  %>% 
-  mutate(Cloud_True = (image_1_train %>% 
+  mutate(Cloud_True = (Image_1_train %>% 
   filter(Cloud != "0") )$Cloud)
 
 p1 <- proj %>% 
