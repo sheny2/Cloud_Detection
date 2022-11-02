@@ -471,12 +471,12 @@ prop.table(table(Image_all_Cut$Type))
 
 Image_all_Cut %>% 
   group_by(Type) %>% 
-  summarise(`Perct Cloud` = mean(Cloud == "1"))
+  dplyr::summarise(`Perct Cloud` = mean(Cloud == "1"))
 ```
 
 
 ```{r 5 KNN groups, fig.width=12, fig.height=4}
-set.seed(8848)
+set.seed(666)
 
 KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)
 KM_2 <- kmeans(Image_2[,1:2], centers = 5, nstart = 25)
@@ -488,7 +488,7 @@ Image_all_KM <- rbind(Image_1 %>% mutate(image = "1", cluster = KM_1$cluster),
 
 Image_all_KM <- Image_all_KM %>% 
   mutate(Type = ifelse(cluster == "5", "Test", "Train"))  %>% 
-  mutate(Type = ifelse(cluster == "4", "Validation", Type)) 
+  mutate(Type = ifelse(cluster == "1", "Validation", Type)) 
 
 KM_1_Map <- Image_all_KM %>% filter(image == "1") %>% 
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
@@ -510,9 +510,11 @@ grid.arrange(arrangeGrob(KM_1_Map + ggeasy::easy_center_title() + theme(legend.p
              lemon::g_legend(KM_1_Map +  guides(colour = guide_legend(nrow = 1))), nrow = 2, heights = c(10, 1))
 
 
+prop.table(table(Image_all_KM$Type))
+
 Image_all_KM %>% 
   group_by(Type) %>% 
-  summarise(`Perct Cloud` = mean(Cloud == "1"))
+  dplyr::summarise(`Perct Cloud` = mean(Cloud == "1"))
 ```
 
 # 2.b
@@ -569,7 +571,6 @@ cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$AN)
 # 3. Model Fitting & Validation
 
 # 3.a
-
 
 ```{r train and test}
 Image_Train_Cut <- Image_all_Cut %>%  filter(Type != "Test")
@@ -664,13 +665,14 @@ CV_Master <-
       
     }
     
+    colnames(Accuracy) = c(1:K, "Average")
     return(Accuracy)
   }
 ```
 
 # Remeber to transform variables! log
 
-```{r}
+```{r, warning=F}
 set.seed(666)
 CV_Master(
   classifier = "Logistic",
@@ -707,9 +709,15 @@ CV_Master(
   K = 5,
   loss_fun = "Accuracy"
 )
+```
+
+
+```{r}
 
 ```
 
+
+# ROC 
 
 ```{r}
 
