@@ -128,7 +128,7 @@ map_3 <- image_3 %>%
 # map_3
 ```
 
-```{r arranged map, fig.width=12,fig.height=4}
+```{r arranged map, fig.width = 12, fig.height = 4}
 grid.arrange(arrangeGrob(map_1 + ggeasy::easy_center_title() + theme(legend.position="none"),
                          map_2 + ggeasy::easy_center_title() + theme(legend.position="none"),
                          map_3 + ggeasy::easy_center_title() + theme(legend.position="none"),
@@ -174,7 +174,7 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 ```
 
 
-```{r image 1 covariate map, fig.width=12,fig.height=3.5}
+```{r image 1 covariate map, fig.width=12,fig.height=4}
 NDAI_plot <- image_1 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
@@ -195,7 +195,7 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
 ```
 
 
-```{r image 2 covariate map, fig.width=12,fig.height=3.5}
+```{r image 2 covariate map, fig.width=12,fig.height=4}
 NDAI_plot <- image_2 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
   theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
@@ -215,7 +215,7 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
 ```
 
 
-```{r image 3 covariate map, fig.width=12,fig.height=3.5}
+```{r image 3 covariate map, fig.width=12,fig.height=4}
 NDAI_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
   theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
@@ -263,9 +263,9 @@ image_1 %>%
 # Remove cloud = 0 from here.
 
 ```{r filter zero, eval = T, echo = T}
-Image_1 <- image_1 %>% filter(Cloud != "0") 
-Image_2 <- image_2 %>% filter(Cloud != "0") 
-Image_3 <- image_3 %>% filter(Cloud != "0") 
+Image_1 <- image_1 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
+Image_2 <- image_2 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
+Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 ```
 
 
@@ -377,13 +377,13 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 
 #### Make a table of availble data: 
-image 1 
-115110 total
-82148 Without 0 
-16430 Test
-65718 Train
-52574 train
-13144 val
+<!-- image 1  -->
+<!-- 115110 total -->
+<!-- 82148 Without 0  -->
+<!-- 16430 Test -->
+<!-- 65718 Train -->
+<!-- 52574 train -->
+<!-- 13144 val -->
 
 
 ```{r index groups, eval = F, echo = F}
@@ -413,7 +413,7 @@ image 1
 ```
 
 
-```{r 5 groups, fig.width=10, fig.height=4}
+```{r 5 groups, fig.width=12, fig.height=4}
 # summary(Image_1_train[,1:2])
 # quantile(Image_1_train$X_coord, c(0.5))
 # quantile(Image_1_train$Y_coord, c(0.2, 0.4, 0.6, 0.8))
@@ -475,7 +475,7 @@ Image_all_Cut %>%
 ```
 
 
-```{r 5 KNN groups, fig.width=10, fig.height=4}
+```{r 5 KNN groups, fig.width=12, fig.height=4}
 set.seed(8848)
 
 KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)
@@ -563,7 +563,6 @@ cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$AN)
 
 # 2d CV Master
 
-write some shit
 
 
 
@@ -607,6 +606,7 @@ CV_Master <-
       
     }
     
+    
     if (classifier == "LDA")
     {
       LDA_model <- list()
@@ -614,8 +614,9 @@ CV_Master <-
       for (i in 1:K) {
         dat_CV_train = dat %>% filter(fold_index != i)
         dat_CV_test = dat %>% filter(fold_index == i)
-        LDA_model[[i]] = lda(paste("train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""),
-        data = as.matrix(dat_CV_train))
+        LDA_model[[i]] = lda(as.formula(paste(
+          "train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""
+        )), data = dat_CV_train)
         prediction[[i]] = predict(LDA_model[[i]], dat_CV_test)$class
       }
       
@@ -628,10 +629,9 @@ CV_Master <-
       for (i in 1:K) {
         dat_CV_train = dat %>% filter(fold_index != i)
         dat_CV_test = dat %>% filter(fold_index == i)
-        QDA_model[[i]] = qda(paste("train_label ~ ", paste(names(
-          train_feature
-        ), collapse = "+"), sep = ""),
-        data = as.matrix(dat_CV_train))
+        QDA_model[[i]] = qda(as.formula(paste(
+          "train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""
+        )), data = dat_CV_train)
         prediction[[i]] = predict(QDA_model[[i]], dat_CV_test)$class
       }
     }
@@ -643,8 +643,9 @@ CV_Master <-
       for (i in 1:K) {
         dat_CV_train = dat %>% filter(fold_index != i)
         dat_CV_test = dat %>% filter(fold_index == i)
-        NB_model[[i]] = naiveBayes(dat_CV_train %>% dplyr::select(-train_label, -fold_index), 
-                                   dat_CV_train$train_label)
+        NB_model[[i]] = naiveBayes(as.formula(paste(
+          "train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""
+        )), data = dat_CV_train)
         prediction[[i]] = predict(NB_model[[i]], dat_CV_test)
       }
     }
@@ -676,7 +677,7 @@ CV_Master(
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
   train_label = Image_Train_Cut[, 3],
-  K = 3,
+  K = 5,
   loss_fun = "Accuracy"
 )
 
@@ -685,7 +686,7 @@ CV_Master(
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
   train_label = Image_Train_Cut[, 3],
-  K = 3,
+  K = 5,
   loss_fun = "Accuracy"
 )
 
@@ -694,7 +695,7 @@ CV_Master(
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
   train_label = Image_Train_Cut[, 3],
-  K = 3,
+  K = 5,
   loss_fun = "Accuracy"
 )
 
@@ -703,7 +704,7 @@ CV_Master(
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
   train_label = Image_Train_Cut[, 3],
-  K =3,
+  K = 5,
   loss_fun = "Accuracy"
 )
 
