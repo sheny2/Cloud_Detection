@@ -614,9 +614,7 @@ CV_Master <-
       for (i in 1:K) {
         dat_CV_train = dat %>% filter(fold_index != i)
         dat_CV_test = dat %>% filter(fold_index == i)
-        LDA_model[[i]] = lda(paste("train_label ~ ", paste(names(
-          train_feature
-        ), collapse = "+"), sep = ""),
+        LDA_model[[i]] = lda(paste("train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""),
         data = as.matrix(dat_CV_train))
         prediction[[i]] = predict(LDA_model[[i]], dat_CV_test)$class
       }
