@@ -476,7 +476,7 @@ Image_all_Cut %>%
 
 
 ```{r 5 KNN groups, fig.width=12, fig.height=4}
-set.seed(666)
+set.seed(8848)
 
 KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)
 KM_2 <- kmeans(Image_2[,1:2], centers = 5, nstart = 25)
@@ -487,8 +487,8 @@ Image_all_KM <- rbind(Image_1 %>% mutate(image = "1", cluster = KM_1$cluster),
                       Image_3 %>% mutate(image = "3", cluster = KM_3$cluster))
 
 Image_all_KM <- Image_all_KM %>% 
-  mutate(Type = ifelse(cluster == "5", "Test", "Train"))  %>% 
-  mutate(Type = ifelse(cluster == "1", "Validation", Type)) 
+  mutate(Type = ifelse(cluster == "2", "Test", "Train"))  %>% 
+  mutate(Type = ifelse(cluster == "5", "Validation", Type)) 
 
 KM_1_Map <- Image_all_KM %>% filter(image == "1") %>% 
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
@@ -673,7 +673,7 @@ CV_Master <-
 # Remeber to transform variables! log
 
 ```{r, warning=F}
-set.seed(666)
+set.seed(8848)
 CV_Master(
   classifier = "Logistic",
   train_coord = Image_Train_Cut[, 1:2],
