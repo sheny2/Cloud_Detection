@@ -261,8 +261,8 @@ image_1 %>%
 ```
 
 # Remove cloud = 0 from here.
-```{r filter zero, eval = F, echo = F}
-# filter or not??????
+
+```{r filter zero, eval = T, echo = T}
 Image_1 <- image_1 %>% filter(Cloud != "0") 
 Image_2 <- image_2 %>% filter(Cloud != "0") 
 Image_3 <- image_3 %>% filter(Cloud != "0") 
@@ -413,7 +413,7 @@ image 1
 ```
 
 
-```{r 5 groups, fig.width=12, fig.height=3}
+```{r 5 groups, fig.width=10, fig.height=4}
 # summary(Image_1_train[,1:2])
 # quantile(Image_1_train$X_coord, c(0.5))
 # quantile(Image_1_train$Y_coord, c(0.2, 0.4, 0.6, 0.8))
@@ -439,24 +439,29 @@ Cut_3 <- seperate_fold(Image_3)
 
 
 Cut_1_Map <- Cut_1 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
-  geom_hline(yintercept = 383*0.2 ) + 
-  geom_hline(yintercept = 383*0.4) + 
-  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  # geom_hline(yintercept = 383*0.2 ) + 
+  # geom_hline(yintercept = 383*0.4) + 
+  labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
 
 Cut_2_Map <- Cut_2 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
-  geom_hline(yintercept = 383*0.2) + 
-  geom_hline(yintercept = 383*0.4) + 
-  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  # geom_hline(yintercept = 383*0.2) + 
+  # geom_hline(yintercept = 383*0.4) + 
+  labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate")
 
 Cut_3_Map <- Cut_3 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
-  geom_hline(yintercept = 383*0.2 ) + 
-  geom_hline(yintercept = 383*0.4) + 
-  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  # geom_hline(yintercept = 383*0.2 ) + 
+  # geom_hline(yintercept = 383*0.4) + 
+  labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
 
-grid.arrange(Cut_1_Map, Cut_2_Map, Cut_3_Map, nrow = 1)
+
+grid.arrange(arrangeGrob(Cut_1_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         Cut_2_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         Cut_3_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1),
+             lemon::g_legend(Cut_1_Map +  guides(colour = guide_legend(nrow = 1))), nrow = 2, heights = c(10, 1))
 
 Image_all_Cut <- rbind(Cut_1, Cut_2, Cut_3)
 
@@ -470,34 +475,40 @@ Image_all_Cut %>%
 ```
 
 
-```{r 5 KNN groups, fig.width=12, fig.height=3}
+```{r 5 KNN groups, fig.width=10, fig.height=4}
 set.seed(8848)
 
 KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)
 KM_2 <- kmeans(Image_2[,1:2], centers = 5, nstart = 25)
 KM_3 <- kmeans(Image_3[,1:2], centers = 5, nstart = 25)
 
-KM_1_Map <- Image_1 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = factor(KM_1$cluster)), size = 0.5) +
-  theme_bw() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +  scale_color_manual(values = c("red", "blue", "green", "green", "green"))  
-
-KM_2_Map <- Image_2 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = factor(KM_2$cluster)), size = 0.5) +
-  theme_bw() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +  scale_color_manual(values = c("red", "blue", "green", "green", "green"))  
-
-KM_3_Map <- Image_3 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = factor(KM_3$cluster)), size = 0.5) +
-  theme_bw() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +  scale_color_manual(values = c("red", "blue", "green", "green", "green"))  
-
-grid.arrange(KM_1_Map, KM_2_Map, KM_3_Map, nrow = 1)
-
-Image_all_KM <- rbind(Image_1 %>% mutate(cluster = KM_1$cluster),
-                      Image_2 %>% mutate(cluster = KM_2$cluster),
-                      Image_3 %>% mutate(cluster = KM_3$cluster))
+Image_all_KM <- rbind(Image_1 %>% mutate(image = "1", cluster = KM_1$cluster),
+                      Image_2 %>% mutate(image = "2", cluster = KM_2$cluster),
+                      Image_3 %>% mutate(image = "3", cluster = KM_3$cluster))
 
 Image_all_KM <- Image_all_KM %>% 
-  mutate(Type = ifelse(cluster == "1", "Test", "Train"))  %>% 
-  mutate(Type = ifelse(cluster == "2", "Validation", Type)) 
+  mutate(Type = ifelse(cluster == "5", "Test", "Train"))  %>% 
+  mutate(Type = ifelse(cluster == "4", "Validation", Type)) 
+
+KM_1_Map <- Image_all_KM %>% filter(image == "1") %>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  theme_bw() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+# +  scale_color_manual(values = c("red", "blue", "green", "green", "green"))  
+
+KM_2_Map <- Image_all_KM %>% filter(image == "2") %>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  theme_bw() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+KM_3_Map <-Image_all_KM %>% filter(image == "3") %>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  theme_bw() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") 
+
+grid.arrange(arrangeGrob(KM_1_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         KM_2_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         KM_3_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1),
+             lemon::g_legend(KM_1_Map +  guides(colour = guide_legend(nrow = 1))), nrow = 2, heights = c(10, 1))
+
 
 Image_all_KM %>% 
   group_by(Type) %>% 
@@ -570,79 +581,139 @@ Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 
 
 ```{r}
-CV_Master <- function(Classifier, train_coord, train_feature, train_label, K, loss_fun) {
-  
-  # if classifer not in given choice
-
-  fold_index = kmeans(train_coord, centers = K, nstart = 25)
-  dat = cbind(train_feature, train_label)
-  dat$fold_index = fold_index$cluster
-  
-  if (Classifier == "Logistic")
-  {
-  glm_result <- list()
-  prediction <- list()
-  for (i in 1:K){
-   dat_CV_train = dat %>% filter(fold_index != i)
-   dat_CV_test = dat %>% filter(fold_index == i)
-   glm_result[[i]] = glm(paste("train_label ~ ", paste(names(train_feature), collapse = "+" ), sep = "" ), data = dat_CV_train, family = 'binomial')
-    prob = predict(glm_result[[i]], dat_CV_test, type = "response")
-    prediction[[i]] = ifelse(prob > 0.5, 1, -1)
-        }
-  
-  }
-  
-  if (Classifier == "LDA")
-  {
+CV_Master <-
+  function(classifier, train_coord, train_feature, train_label, K, loss_fun) {
+    # if classifer not in given choice
     
+    fold_index = kmeans(train_coord, centers = K, nstart = 25)
+    dat = cbind(train_feature, train_label)
+    dat$fold_index = fold_index$cluster
     
-  }
-  
-  if (Classifier == "QDA")
-  {
-  }
-  
-  
-
-  if (loss_fun == "Accuracy")
-  {
-    Accuracy <- matrix(NA, ncol = K + 1, nrow = 1)
-    for (j in 1:K)
-    { dat_CV_test = dat %>% filter(fold_index == j)
-      Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$train_label)
+    if (classifier == "Logistic")
+    {
+      glm_result <- list()
+      prediction <- list()
+      for (i in 1:K) {
+        dat_CV_train = dat %>% filter(fold_index != i)
+        dat_CV_test = dat %>% filter(fold_index == i)
+        glm_result[[i]] = glm(paste("train_label ~ ", paste(names(
+          train_feature
+        ), collapse = "+"), sep = ""),
+        data = dat_CV_train,
+        family = 'binomial')
+        prob = predict(glm_result[[i]], dat_CV_test, type = "response")
+        prediction[[i]] = ifelse(prob > 0.5, 1,-1)
+      }
+      
     }
-    Accuracy[1, K+1] = mean(Accuracy[1, 1:K])
     
+    if (classifier == "LDA")
+    {
+      LDA_model <- list()
+      prediction <- list()
+      for (i in 1:K) {
+        dat_CV_train = dat %>% filter(fold_index != i)
+        dat_CV_test = dat %>% filter(fold_index == i)
+        LDA_model[[i]] = lda(paste("train_label ~ ", paste(names(
+          train_feature
+        ), collapse = "+"), sep = ""),
+        data = dat_CV_train)
+        prediction[[i]] = predict(LDA_model[[i]], dat_CV_test)$class
+      }
+      
+    }
+    
+    if (classifier == "QDA")
+    {
+      QDA_model <- list()
+      prediction <- list()
+      for (i in 1:K) {
+        dat_CV_train = dat %>% filter(fold_index != i)
+        dat_CV_test = dat %>% filter(fold_index == i)
+        QDA_model[[i]] = qda(paste("train_label ~ ", paste(names(
+          train_feature
+        ), collapse = "+"), sep = ""),
+        data = dat_CV_train)
+        prediction[[i]] = predict(QDA_model[[i]], dat_CV_test)$class
+      }
+    }
+    
+    if (classifier == "NB")
+    {
+      for (i in 1:K) {
+        dat_CV_train = dat %>% filter(fold_index != i)
+        dat_CV_test = dat %>% filter(fold_index == i)
+        NB_model[[i]] = naiveBayes(paste("train_label ~ ", paste(names(
+          train_feature
+        ), collapse = "+"), sep = ""),
+        data = dat_CV_train)
+        prediction[[i]] = predict(NB_model[[i]], dat_CV_test)$class
+      }
+    }
+    
+    
+    
+    if (loss_fun == "Accuracy")
+    {
+      Accuracy <- matrix(NA, ncol = K + 1, nrow = 1)
+      for (j in 1:K)
+      {
+        dat_CV_test = dat %>% filter(fold_index == j)
+        Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$train_label)
+      }
+      Accuracy[1, K + 1] = mean(Accuracy[1, 1:K])
+      
+    }
+    
+    return(Accuracy)
   }
-  
-  return(Accuracy)
-}
 ```
 
 
 ```{r}
+set.seed(666)
 CV_Master(
-  Classifier = "Logistic",
+  classifier = "Logistic",
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
   train_label = Image_Train_Cut[, 3],
-  K = 10,
+  K = 3,
   loss_fun = "Accuracy"
 )
 
+CV_Master(
+  classifier = "LDA",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 3,
+  loss_fun = "Accuracy"
+)
 
 CV_Master(
-  Classifier = "Logistic",
-  train_coord = Image_Train_KM[, 1:2],
-  train_feature = Image_Train_KM[, 4:11],
-  train_label = Image_Train_KM[, 3],
-  K = 5,
+  classifier = "QDA",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 3,
+  loss_fun = "Accuracy"
+)
+
+CV_Master(
+  classifier = "NB",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K =3,
   loss_fun = "Accuracy"
 )
 
 ```
 
 
+```{r}
+
+```
 
 
 # Model thoughts
