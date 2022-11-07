@@ -352,6 +352,31 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
              hist_2 + ggeasy::easy_center_title(),
              hist_3 + ggeasy::easy_center_title(),
              nrow = 1)
+
+
+All_Image <- rbind(Image_1, Image_2, Image_3)
+
+hist_1 <- All_Image %>% 
+  ggplot(aes(x = NDAI )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- All_Image %>% 
+  ggplot(aes(x = CORR )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- All_Image %>% 
+  ggplot(aes(x = SD )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_4 <- All_Image %>% 
+  ggplot(aes(x = log(SD) )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             hist_4 + ggeasy::easy_center_title(),
+             nrow = 2)
 ```
 
 
@@ -482,7 +507,7 @@ Image_all_Cut %>%
 ```
 
 
-```{r 5 KNN groups, fig.width=12, fig.height=4}
+```{r 5 KM groups, fig.width=12, fig.height=4}
 set.seed(8848)
 
 KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)

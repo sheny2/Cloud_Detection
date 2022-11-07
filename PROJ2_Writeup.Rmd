@@ -19,6 +19,7 @@ knitr::opts_chunk$set(echo = F, cache = TRUE, warning=F)
 library(mosaic)
 library(caret)
 library(gridExtra)
+library(kableExtra)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 knitr::opts_chunk$set(fig.pos = "H")
@@ -31,6 +32,9 @@ colnames(image_1) = colnames(image_2) = colnames(image_3) <- var_name
 image_1$Cloud <- factor(image_1$Cloud)
 image_2$Cloud <- factor(image_2$Cloud)
 image_3$Cloud <- factor(image_3$Cloud)
+Image_1 <- image_1 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
+Image_2 <- image_2 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
+Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 ```
 
 
@@ -39,19 +43,22 @@ image_3$Cloud <- factor(image_3$Cloud)
 
 \subsection{Background \& Motivation}
 
-(a) Write a half-page summary of the paper, including at least the purpose of the study, the data, the collection method, its conclusions and potential impact.
+<!-- (a) Write a half-page summary of the paper, including at least the purpose of the study, the data, the collection method, its conclusions and potential impact. -->
 
-
-With the global climates getting increasingly extreme, humans are making the best use of sciences and technologies to understand the environment, especially in the Arctic. 
+With the global climates getting increasingly extreme, humans are making the best use of sciences and technologies to understand the environment, especially in the Arctic region. 
 The detection of clouds in satellite images has become an important task, as cloud coverage is closely related to the surface air temperatures and atmospheric carbon dioxide levels. Yet it is a challenging problem since clouds are similar on snow- and ice-covered surface
-In this study, we are going to examine various classification methods and build reliable models that distinguish the presence of cloud from Arctic satellite images using available features. 
+In this study, we are going to examine various classification methods, build reliable models that distinguish the presence of cloud from Arctic satellite images using available features and evaluate our models' performance. 
 
-The data is obtained from a study by @yu2008. This team of researchers collected the data via the camera of Multiangle Imaging SpectroRadiometer (MISR) launched by the NASA. 
+The data is obtained from a study by @yu2008. This team of researchers collected the data via the camera of Multiangle Imaging SpectroRadiometer (MISR) launched by the NASA. The data is in the forms of image pixels, with each MISR pixel covers a 275 m by 275 m region on the ground. 
+Since standard classification frameworks of clouds were not readily applicable, their goal was also to build operational cloud detection algorithms that can efficiently process the massive MISR data set one data unit at a time without requiring human intervention or expert labeling. 
 
+@yu2008 proposed two algorithm, an enhanced linear correlation matching (ELCM) algorithm based on thresholding the three features with values either fixed or data-adaptive, and an ELCM algorithm with Fisher’s quadratic discriminant analysis (ELCM-QDA). 
 
-(b) Summarize the data, i.e., % of pixels for the different classes. Plot well-labeled beautiful maps using x, y coordinates the expert labels with color of the region based on the expert labels. Do you observe some trend/pattern? Is an i.i.d. assumption for the samples justified for this dataset?
+Their results suggest that both proposed algorithms are computationally efficient for operational processing of the massive MISR data sets. The accuracy and coverage of ELCM are better and more informative compared with conventional MISR operational algorithms. This findings provides important implications and further analysis of MISR data. 
 
-The three images contain 115110, 115229 and 115217 pixels respectively. However, not all pixels are labelled with confident experts' classification. As shown in in Figure \ref{fig:map3}, there are considerable portions of images not labelled. After removing unlabelled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information. 
+\subsection{Data Description}
+
+<!-- (b) Summarize the data, i.e., % of pixels for the different classes. Plot well-labeled beautiful maps using x, y coordinates the expert labels with color of the region based on the expert labels. Do you observe some trend/pattern? Is an i.i.d. assumption for the samples justified for this dataset? -->
 
 ```{r show map, fig.cap="\\label{fig:map3}Maps of three images with expert labels. White represents high confidence cloudy; gray, high confidence clear; and black, unlabeled pixels.",fig.width = 12, fig.height = 4, out.width="85%"}
 Palette_1 <- c("gray","black", "white")
@@ -79,21 +86,187 @@ grid.arrange(arrangeGrob(map_1 + ggeasy::easy_center_title() + theme(legend.posi
                          map_3 + ggeasy::easy_center_title() + theme(legend.position="none"),
                          nrow = 1))
 ```
+In this study, we primarily focus on three of the MISR images. These three images contain 115110, 115229 and 115217 pixels respectively. However, not all pixels are labeled with confident experts' classification. As shown in in Figure \ref{fig:map3}, there are considerable portions of images not labeled. We notice the pattern that usually experts have difficulties distinguishing the areas around what they recognize as clouds. The borderlands between cloudy and clear surfaces are certainly more challenging to determine. 
 
-In specific, each pixel has eight features. The first three are physically useful features: for characterizing the scattering properties of ice- and snow-covered surfaces the correlation (CORR) of MISR images of the same scene from different MISR viewing directions, the standard deviation (SDAn) of MISR nadir camera pixel values across a scene, and a normalized difference angular index (NDAI) that characterizes the changes in a scene with changes in the MISR view direction.
+We can also observe that labeled clouds are often clustered in chunks. Therefore, adjacent pixels' labels are not independent and instead seem to have very high positive correlations, for example if a pixel's neighbors are all labelled as clouds, it is highly likely that it is also part of the cloud. 
 
-The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (Df), $60.0^{\circ}$ (Cf), $45.6^{\circ}$ (BF), and $26.1^{\circ}$ (Af) in the forward direction and $0.0^{\circ}$ (An) in the nadir direction. 
+In Table 1, we present the percentages of expert labels in each image.
+Since we have no confident expert opinion on unlabeled pixels, they are viewed as missing values. 
+After removing unlabeled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information. 
+```{r}
+t1 <- image_1 %>% summarise(`Cloud Labels` = mean(Cloud == "1"), `Clear Labels` = mean(Cloud == "-1"), `Unknown` = mean(Cloud == "0")) %>% mutate(Image = "1")
+
+t2 <- image_2 %>% summarise(`Cloud Labels` = mean(Cloud == "1"), `Clear Labels` = mean(Cloud == "-1"), `Unknown` = mean(Cloud == "0")) %>% mutate(Image = "2")
+
+t3 <- image_3 %>% summarise(`Cloud Labels` = mean(Cloud == "1"), `Clear Labels` = mean(Cloud == "-1"), `Unknown` = mean(Cloud == "0")) %>% mutate(Image = "3")
+
+knitr::kable(rbind(t1, t2, t3),
+    caption = "Proportions of Cloudy and Clear Surfaces by Expert Labeling",
+    booktabs = T ) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
+```
 
 
-(c) Perform a visual and quantitative EDA of the dataset, e.g., summarizing (i) pair- wise relationship between the features themselves and (ii) the relationship between the expert labels with the individual features. Do you notice differences between the two classes (cloud, no cloud) based on the radiance or other features (CORR, NDAI, SD)?
+In specific, each pixel has eight features. The first three are physically useful features: for characterizing the scattering properties of ice- and snow-covered surfaces the correlation (`CORR`) of MISR images of the same scene from different MISR viewing directions, the standard deviation (`SD`) of MISR nadir camera pixel values across a scene, and a normalized difference angular index (`NDAI`) that characterizes the changes in a scene with changes in the MISR view direction.
+
+The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (DF), $60.0^{\circ}$ (CF), $45.6^{\circ}$ (BF), and $26.1^{\circ}$ (AF) in the forward direction and $0.0^{\circ}$ (AN) in the nadir direction. 
+
+
+\subsection{Explortary Data Analysis}
+
+<!-- (c) Perform a visual and quantitative EDA of the dataset, e.g., summarizing (i) pair- wise relationship between the features themselves and (ii) the relationship between the expert labels with the individual features. Do you notice differences between the two classes (cloud, no cloud) based on the radiance or other features (CORR, NDAI, SD)? -->
+
+
+```{r hist covariate, fig.cap="\\label{fig:hist_cov}Density distributions of features that describe cloud and clear pixels.", fig.width=10, fig.height=3}
+All_Image <- rbind(Image_1, Image_2, Image_3)
+
+hist_1 <- All_Image %>% 
+  ggplot(aes(x = NDAI )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- All_Image %>% 
+  ggplot(aes(x = CORR )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- All_Image %>% 
+  ggplot(aes(x = SD )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_4 <- All_Image %>% 
+  ggplot(aes(x = log(SD) )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             hist_4 + ggeasy::easy_center_title(),
+             nrow = 2)
+```
 
 
 
 \section{Preparation}
 
-(a) (Data Split) Split the entire data (imagem1.txt, imagem2.txt, imagem3.txt) into three sets: training, validation and test. Think carefully about how to split the data. Suggest at least two non-trivial different ways of splitting the data which takes into account that the data is not i.i.d.
+<!-- (a) (Data Split) Split the entire data (imagem1.txt, imagem2.txt, imagem3.txt) into three sets: training, validation and test. Think carefully about how to split the data. Suggest at least two non-trivial different ways of splitting the data which takes into account that the data is not i.i.d. -->
+
+\subsection{Data Spliting}
+
+Before building models, it is important to prepare the data as training, validation and testing sets so that we can evaluate our models.
+The key idea of data spliting is to take into account the fact that this data is not i.i.d. Therefore, we propose the two following ways of dividing data into blocks. 
+
+
+**Horizontal Cuts**: The first method cuts each image horizontally in order to ensure each block has a reasonable portion of clouds and clear surfaces. 
+Bacially, each image is cut into five horizontal blocks, and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
+This methods splits the data into 61.27% training data, 18.66% validation data and 20.07% testing data. 
+
+```{r split 1, fig.cap="\\label{fig:cut_split}The first data spliting method is to divide each image horizontally.", fig.width=12, fig.height=4}
+seperate_fold <- function(train_data) {
+  
+  fold_1 <- train_data %>% filter( Y_coord  < 383*0.2 )
+  fold_2 <- train_data %>% filter( 383*0.2 <= Y_coord, Y_coord  < 383*0.4 )
+  fold_3 <- train_data %>% filter( 383*0.4 <= Y_coord, Y_coord  < 383*0.6 )
+  fold_4 <- train_data %>% filter( 383*0.6 <= Y_coord, Y_coord  < 383*0.8 )
+  fold_5 <- train_data %>% filter( 383*0.8 <= Y_coord )
+  
+return( rbind(fold_1 %>% mutate(Type = "Test"),
+      fold_2 %>% mutate(Type = "Validation"),
+      fold_3 %>% mutate(Type = "Train"),
+      fold_4 %>% mutate(Type = "Train"),
+      fold_5 %>% mutate(Type = "Train") ) ) 
+}
+
+Cut_1 <- seperate_fold(Image_1)
+Cut_2 <- seperate_fold(Image_2)
+Cut_3 <- seperate_fold(Image_3)
+
+
+Cut_1_Map <- Cut_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+
+Cut_2_Map <- Cut_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate")
+
+Cut_3_Map <- Cut_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + theme(legend.position="none")
+
+
+grid.arrange(arrangeGrob(Cut_1_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         Cut_2_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         Cut_3_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1),
+             lemon::g_legend(Cut_1_Map +  guides(colour = guide_legend(nrow = 1))), nrow = 2, heights = c(10, 1))
+
+Image_all_Cut <- rbind(Cut_1, Cut_2, Cut_3)
+```
+
+
+**K-means Clusters**: The second method of blocked data spliting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image's datapoints into five distinct groups. Again three of these are used for training data, one is for validation and the last one is for testing. 
+The K-means method splits the data into 60.72% training data, 20.04% validation data and 19.24% testing data. 
+
+```{r split 2, fig.cap="\\label{fig:kmean_split}The second data spliting method is to divide based on the K-means algorithm.", fig.width=12, fig.height=4}
+set.seed(8848)
+
+KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)
+KM_2 <- kmeans(Image_2[,1:2], centers = 5, nstart = 25)
+KM_3 <- kmeans(Image_3[,1:2], centers = 5, nstart = 25)
+
+Image_all_KM <- rbind(Image_1 %>% mutate(image = "1", cluster = KM_1$cluster),
+                      Image_2 %>% mutate(image = "2", cluster = KM_2$cluster),
+                      Image_3 %>% mutate(image = "3", cluster = KM_3$cluster))
+
+Image_all_KM <- Image_all_KM %>% 
+  mutate(Type = ifelse(cluster == "2", "Test", "Train"))  %>% 
+  mutate(Type = ifelse(cluster == "5", "Validation", Type)) 
+
+KM_1_Map <- Image_all_KM %>% filter(image == "1") %>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  theme_bw() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
+
+KM_2_Map <- Image_all_KM %>% filter(image == "2") %>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  theme_bw() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+KM_3_Map <-Image_all_KM %>% filter(image == "3") %>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Type), size = 0.5) +
+  theme_bw() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") 
+
+grid.arrange(arrangeGrob(KM_1_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         KM_2_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         KM_3_Map + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1),
+             lemon::g_legend(KM_1_Map +  guides(colour = guide_legend(nrow = 1))), nrow = 2, heights = c(10, 1))
+```
+
+The table below describes how much cloud pixels there are in each set after two ways of data splitting. We think they are both reasonable in terms of having both cloud and clear pixels in every subset of data. 
+
+```{r, eval = T}
+# prop.table(table(Image_all_Cut$Type))
+# prop.table(table(Image_all_KM$Type))
+
+knitr::kable(
+  rbind(
+    Image_all_Cut %>%
+      group_by(Type) %>%
+      dplyr::summarise(`Perct Cloud` = mean(Cloud == "1")) %>%
+      mutate(Method = "Horizontal Cuts"),
+    Image_all_KM %>%
+      group_by(Type) %>%
+      dplyr::summarise(`Perct Cloud` = mean(Cloud == "1")) %>%
+      mutate(Method = "K-means")
+  ),
+  caption = "Proportions of cloud pixels in each set",
+  booktabs = T) %>%
+  kable_styling(latex_options = "HOLD_position",
+                position = "center",
+                font_size = 8)
+```
+
 
 (b) (Baseline) Report the accuracy of a trivial classifier which sets all labels to -1 (cloud-free) on the validation set and on the test set. In what scenarios will such a classifier have high average accuracy? Hint: Such a step provides a baseline to ensure that the classification problems at hand is not trivial.
+
 
 (c) (First order importance) Assuming the expert labels as the truth, and without using fancy classification methods, suggest three of the “best” features, using quantitative and visual justification. Define your “best” feature criteria clearly. Only the relevant plots are necessary. Be sure to give this careful consideration, as it relates to subsequent problems.
 
@@ -134,3 +307,5 @@ In addition to a writeup of the above results, please submit a zip file containi
 (ii) your R code (with CVmaster function in a separate R file),
 
 (iii) a README.md file describing, in detail, how to reproduce your paper from scratch (assume researcher has access to the images).
+
+\section{Reference}

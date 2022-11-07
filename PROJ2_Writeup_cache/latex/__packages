@@ -12,3 +12,4 @@ plyr
 scales
 ggbiplot
 gridExtra
+kableExtra
