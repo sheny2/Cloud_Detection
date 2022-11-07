@@ -4,7 +4,6 @@ author: "Yicheng Shen (yicheng.shen@duke.edu) & Yunhong Bao (yunhong.bao@duke.ed
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
     - \setlength{\parskip}{0em}
-    - \usepackage{setspace}\onehalfspacing
     - \setlength{\parindent}{2em}
     - \usepackage{indentfirst}
     - \usepackage{float}
@@ -12,26 +11,78 @@ output:
   pdf_document: 
     extra_dependencies: ["float"]
     number_sections: true
+bibliography: cloud.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning=F)
+knitr::opts_chunk$set(echo = F, cache = TRUE, warning=F)
 library(mosaic)
-library(GGally)
 library(caret)
-library(ggfortify)
-library(ggbiplot)
+library(gridExtra)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 knitr::opts_chunk$set(fig.pos = "H")
+
+image_1 <- read.table("image_data/imagem1.txt")
+image_2 <- read.table("image_data/imagem2.txt")
+image_3 <- read.table("image_data/imagem3.txt")
+var_name <- c("Y_coord", "X_coord", "Cloud", "NDAI", "SD", "CORR", "DF","CF","BF","AF","AN")
+colnames(image_1) = colnames(image_2) = colnames(image_3) <- var_name
+image_1$Cloud <- factor(image_1$Cloud)
+image_2$Cloud <- factor(image_2$Cloud)
+image_3$Cloud <- factor(image_3$Cloud)
 ```
 
 
 \section{Data Collection and Exploration}
 
+
+\subsection{Background \& Motivation}
+
 (a) Write a half-page summary of the paper, including at least the purpose of the study, the data, the collection method, its conclusions and potential impact.
 
+
+With the global climates getting increasingly extreme, humans are making the best use of sciences and technologies to understand the environment, especially in the Arctic. 
+The detection of clouds in satellite images has become an important task, as cloud coverage is closely related to the surface air temperatures and atmospheric carbon dioxide levels. Yet it is a challenging problem since clouds are similar on snow- and ice-covered surface
+In this study, we are going to examine various classification methods and build reliable models that distinguish the presence of cloud from Arctic satellite images using available features. 
+
+The data is obtained from a study by @yu2008. This team of researchers collected the data via the camera of Multiangle Imaging SpectroRadiometer (MISR) launched by the NASA. 
+
+
 (b) Summarize the data, i.e., % of pixels for the different classes. Plot well-labeled beautiful maps using x, y coordinates the expert labels with color of the region based on the expert labels. Do you observe some trend/pattern? Is an i.i.d. assumption for the samples justified for this dataset?
+
+The three images contain 115110, 115229 and 115217 pixels respectively. However, not all pixels are labelled with confident experts' classification. As shown in in Figure \ref{fig:map3}, there are considerable portions of images not labelled. After removing unlabelled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information. 
+
+```{r show map, fig.cap="\\label{fig:map3}Maps of three images with expert labels. White represents high confidence cloudy; gray, high confidence clear; and black, unlabeled pixels.",fig.width = 12, fig.height = 4, out.width="85%"}
+Palette_1 <- c("gray","black", "white")
+
+map_1 <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_map() + theme(legend.position = "none") +
+  labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_1)
+
+map_2 <- image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size =  0.5) +
+  theme_map() + theme(legend.position = "none") +
+  labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_1) 
+
+map_3 <- image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_map() + theme(legend.position = "none") +
+  labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_1)
+
+grid.arrange(arrangeGrob(map_1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map_2 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map_3 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1))
+```
+
+In specific, each pixel has eight features. The first three are physically useful features: for characterizing the scattering properties of ice- and snow-covered surfaces the correlation (CORR) of MISR images of the same scene from different MISR viewing directions, the standard deviation (SDAn) of MISR nadir camera pixel values across a scene, and a normalized difference angular index (NDAI) that characterizes the changes in a scene with changes in the MISR view direction.
+
+The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (Df), $60.0^{\circ}$ (Cf), $45.6^{\circ}$ (BF), and $26.1^{\circ}$ (Af) in the forward direction and $0.0^{\circ}$ (An) in the nadir direction. 
 
 
 (c) Perform a visual and quantitative EDA of the dataset, e.g., summarizing (i) pair- wise relationship between the features themselves and (ii) the relationship between the expert labels with the individual features. Do you notice differences between the two classes (cloud, no cloud) based on the radiance or other features (CORR, NDAI, SD)?

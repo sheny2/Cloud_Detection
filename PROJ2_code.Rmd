@@ -269,6 +269,13 @@ Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 ```
 
 
+```{r}
+dim(Image_1)
+dim(Image_2)
+dim(Image_3)
+```
+
+
 ```{r hist covariate, fig.width=12, fig.height=3}
 hist_1 <- Image_1 %>% 
   ggplot(aes(x = NDAI)) +
