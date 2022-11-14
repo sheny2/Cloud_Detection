@@ -37,6 +37,9 @@ colnames(image_1) = colnames(image_2) = colnames(image_3) <- var_name
 image_1$Cloud <- factor(image_1$Cloud)
 image_2$Cloud <- factor(image_2$Cloud)
 image_3$Cloud <- factor(image_3$Cloud)
+image_1$logSD <- log(image_1$SD)
+image_2$logSD <- log(image_2$SD)
+image_3$logSD <- log(image_3$SD)
 ```
 
 ```{r summary and dim}
@@ -180,7 +183,7 @@ NDAI_plot <- image_1 %>%
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
 
 SD_plot <- image_1 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = logSD), size = 0.5) +
   theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
 
 CORR_plot <- image_1 %>%
@@ -201,7 +204,7 @@ NDAI_plot <- image_2 %>%
   theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
 
 SD_plot <- image_2 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = logSD), size = 0.5) +
   theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
 
 CORR_plot <- image_2 %>%
@@ -222,7 +225,7 @@ NDAI_plot <- image_3 %>%
   scale_color_gradient(low="black", high="white")
 
 SD_plot <- image_3 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = SD), size = 0.5) +
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = logSD), size = 0.5) +
   theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
   scale_color_gradient(low="black", high="white")
 
@@ -574,15 +577,32 @@ Image_all_KM %>%
   summarise(Accuracy = mean(Predict == Cloud))
 ```
 
-
+ scenario with high accuracy: all clear in test and validation sets
+ 
+ 
 # 2.c
 
 ```{r}
-pca_result <- prcomp(Image_all_Cut %>% dplyr::select(NDAI:AN), cetner = T, scale. = T) 
+Image_all_Cut <- Image_all_Cut %>% dplyr::select(-SD)
+Image_all_KM <- Image_all_KM %>% dplyr::select(-SD)
+```
+
+
+```{r}
+# save(Image_all_Cut, file = "Image_all_Cut.RData")
+# save(Image_all_KM, file = "Image_all_KM.RData")
+
+load("Image_all_Cut.RData")
+load("Image_all_KM.RData")
+```
+
+
+```{r}
+pca_result <- prcomp(Image_all_Cut %>% dplyr::select(NDAI:logSD), cetner = T, scale. = T) 
 as.matrix(pca_result$rotation )
 
 cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$NDAI)
-cor( as.numeric(Image_all_Cut$Cloud), log(Image_all_Cut$SD))
+cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$logSD)
 cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$CORR)
 
 cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$DF)
@@ -594,6 +614,9 @@ cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$AN)
 
 
 **For now, choose the first three features.**
+
+# Use NDAI, CORR and logSD 
+
 
 # 2d CV Master
 
@@ -612,148 +635,197 @@ Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 ```
 
 
-```{r}
-CV_Master <-
-  function(classifier, train_coord, train_feature, train_label, K, loss_fun) {
-    # if classifer not in given choice
-    
-    fold_index = kmeans(train_coord, centers = K, nstart = 25)
-    dat = cbind(train_feature, train_label)
-    dat$fold_index = fold_index$cluster
-    
-    if (classifier == "Logistic")
-    {
-      glm_result <- list()
-      prediction <- list()
-      for (i in 1:K) {
-        dat_CV_train = dat %>% filter(fold_index != i)
-        dat_CV_test = dat %>% filter(fold_index == i)
-        glm_result[[i]] = glm(paste("train_label ~ ", paste(names(
-          train_feature
-        ), collapse = "+"), sep = ""),
-        data = dat_CV_train,
-        family = 'binomial')
-        prob = predict(glm_result[[i]], dat_CV_test, type = "response")
-        prediction[[i]] = ifelse(prob > 0.5, 1,-1)
-      }
-      
-    }
-    
-    
-    if (classifier == "LDA")
-    {
-      LDA_model <- list()
-      prediction <- list()
-      for (i in 1:K) {
-        dat_CV_train = dat %>% filter(fold_index != i)
-        dat_CV_test = dat %>% filter(fold_index == i)
-        LDA_model[[i]] = lda(as.formula(paste(
-          "train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""
-        )), data = dat_CV_train)
-        prediction[[i]] = predict(LDA_model[[i]], dat_CV_test)$class
-      }
-      
-    }
-    
-    if (classifier == "QDA")
-    {
-      QDA_model <- list()
-      prediction <- list()
-      for (i in 1:K) {
-        dat_CV_train = dat %>% filter(fold_index != i)
-        dat_CV_test = dat %>% filter(fold_index == i)
-        QDA_model[[i]] = qda(as.formula(paste(
-          "train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""
-        )), data = dat_CV_train)
-        prediction[[i]] = predict(QDA_model[[i]], dat_CV_test)$class
-      }
-    }
-    
-    if (classifier == "NB")
-    {
-      NB_model <- list()
-      prediction <- list()
-      for (i in 1:K) {
-        dat_CV_train = dat %>% filter(fold_index != i)
-        dat_CV_test = dat %>% filter(fold_index == i)
-        NB_model[[i]] = naiveBayes(as.formula(paste(
-          "train_label ~ ", paste(names(train_feature), collapse = "+"), sep = ""
-        )), data = dat_CV_train)
-        prediction[[i]] = predict(NB_model[[i]], dat_CV_test)
-      }
-    }
-    
-    
-    
-    if (loss_fun == "Accuracy")
-    {
-      Accuracy <- matrix(NA, ncol = K + 1, nrow = 1)
-      for (j in 1:K)
-      {
-        dat_CV_test = dat %>% filter(fold_index == j)
-        Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$train_label)
-      }
-      Accuracy[1, K + 1] = mean(Accuracy[1, 1:K])
-      
-    }
-    
-    colnames(Accuracy) = c(1:K, "Average")
-    return(Accuracy)
-  }
-```
+### call CVmaster from separate R file
+
+
 
 # Remeber to transform variables! log
 
 ```{r, warning=F}
 set.seed(8848)
-CV_Master(
+CVmaster(
   classifier = "Logistic",
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
   train_label = Image_Train_Cut[, 3],
-  K = 5,
+  K = 10,
   loss_fun = "Accuracy"
 )
 
-CV_Master(
-  classifier = "LDA",
-  train_coord = Image_Train_Cut[, 1:2],
-  train_feature = Image_Train_Cut[, 4:11],
-  train_label = Image_Train_Cut[, 3],
-  K = 5,
-  loss_fun = "Accuracy"
-)
-
-CV_Master(
-  classifier = "QDA",
-  train_coord = Image_Train_Cut[, 1:2],
-  train_feature = Image_Train_Cut[, 4:11],
-  train_label = Image_Train_Cut[, 3],
-  K = 5,
-  loss_fun = "Accuracy"
-)
-
-CV_Master(
-  classifier = "NB",
-  train_coord = Image_Train_Cut[, 1:2],
-  train_feature = Image_Train_Cut[, 4:11],
-  train_label = Image_Train_Cut[, 3],
-  K = 5,
+CVmaster(
+  classifier = "Logistic",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 10,
   loss_fun = "Accuracy"
 )
 ```
 
 
-```{r}
+```{r, warning=F}
+set.seed(8848)
+CVmaster(
+  classifier = "LDA",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
 
+CVmaster(
+  classifier = "LDA",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+```
+
+```{r, warning=F}
+set.seed(8848)
+CVmaster(
+  classifier = "QDA",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+
+
+CVmaster(
+  classifier = "QDA",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+```
+
+```{r, warning=F}
+set.seed(8848)
+CVmaster(
+  classifier = "NB",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+
+
+CVmaster(
+  classifier = "NB",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+```
+```{r, warning=F}
+set.seed(8848)
+CVmaster(
+  classifier = "KNN",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+
+
+CVmaster(
+  classifier = "KNN",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+```
+
+```{r, warning=F}
+set.seed(8848)
+CVmaster(
+  classifier = "SVM",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+
+
+CVmaster(
+  classifier = "SVM",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
 ```
 
 
 # ROC 
 
 ```{r}
+library(pROC)
 
+roc_logreg <- ROC(
+  classifier = "Logistic",
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3]
+)
+
+plot(roc_logreg)
+
+roc_LDA <- ROC(
+  classifier = "LDA",
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3]
+)
+
+plot(roc_LDA)
+
+roc_QDA <- ROC(
+  classifier = "QDA",
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3]
+)
+
+plot(roc_QDA)
+
+
+roc_NB <- ROC(
+  classifier = "NB",
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3]
+)
+
+plot(roc_NB)
 ```
+
+```{r}
+roc_knn <- list()
+
+for (i in 2:10) {
+roc_knn[[i]] <- ROC(
+  classifier = "KNN",
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = i
+)
+}
+```
+
+
+
 
 
 # Model thoughts
