@@ -15,7 +15,7 @@ bibliography: cloud.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, cache = TRUE, warning=F)
+knitr::opts_chunk$set(echo = F, cache = F, warning=F)
 library(mosaic)
 library(caret)
 library(gridExtra)
@@ -60,38 +60,66 @@ Their results suggest that both proposed algorithms are computationally efficien
 
 <!-- (b) Summarize the data, i.e., % of pixels for the different classes. Plot well-labeled beautiful maps using x, y coordinates the expert labels with color of the region based on the expert labels. Do you observe some trend/pattern? Is an i.i.d. assumption for the samples justified for this dataset? -->
 
-```{r show map, fig.cap="\\label{fig:map3}Maps of three images with expert labels. White represents high confidence cloudy; gray, high confidence clear; and black, unlabeled pixels.",fig.width = 12, fig.height = 4, out.width="85%"}
-Palette_1 <- c("gray","black", "white")
+```{r show map, fig.cap="\\label{fig:map3}Maps of three images with expert labels. White represents high confidence of cloud; gray represents high confidence of clear; and dark represents unlabeled pixels.",fig.width = 12, fig.height = 4, out.width="85%"}
+# Palette_1 <- c("gray","black", "white")
+# 
+# map_1 <- image_1 %>%
+#   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+#   theme_map() + theme(legend.position = "none") +
+#   labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +
+#   scale_colour_manual(values = Palette_1)
+# 
+# map_2 <- image_2 %>%
+#   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size =  0.5) +
+#   theme_map() + theme(legend.position = "none") +
+#   labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
+#   scale_colour_manual(values = Palette_1) 
+# 
+# map_3 <- image_3 %>%
+#   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+#   theme_map() + theme(legend.position = "none") +
+#   labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
+#   scale_colour_manual(values = Palette_1)
+# 
+# grid.arrange(arrangeGrob(map_1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+#                          map_2 + ggeasy::easy_center_title() + theme(legend.position="none"),
+#                          map_3 + ggeasy::easy_center_title() + theme(legend.position="none"),
+#                          nrow = 1))
 
-map_1 <- image_1 %>%
+Palette_2 <- c("gray", "white")
+
+map1 <- image_1 %>%
+  filter(Cloud != 0) %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
-  theme_map() + theme(legend.position = "none") +
-  labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +
-  scale_colour_manual(values = Palette_1)
+  theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
 
-map_2 <- image_2 %>%
-  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size =  0.5) +
-  theme_map() + theme(legend.position = "none") +
-  labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
-  scale_colour_manual(values = Palette_1) 
-
-map_3 <- image_3 %>%
+map2 <- image_2 %>%
+  filter(Cloud != 0) %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
-  theme_map() + theme(legend.position = "none") +
-  labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
-  scale_colour_manual(values = Palette_1)
+  theme_dark() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
 
-grid.arrange(arrangeGrob(map_1 + ggeasy::easy_center_title() + theme(legend.position="none"),
-                         map_2 + ggeasy::easy_center_title() + theme(legend.position="none"),
-                         map_3 + ggeasy::easy_center_title() + theme(legend.position="none"),
-                         nrow = 1))
+map3 <- image_3 %>%
+  filter(Cloud != 0) %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = Cloud), size = 0.5) +
+  theme_dark() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map_legend <- lemon::g_legend(map1 +  guides(colour = guide_legend(nrow = 1)))
+
+grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map2 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map3 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1),
+             map_legend, nrow = 2, heights = c(10, 1))
 ```
-In this study, we primarily focus on three of the MISR images. These three images contain 115110, 115229 and 115217 pixels respectively. However, not all pixels are labeled with confident experts' classification. As shown in in Figure \ref{fig:map3}, there are considerable portions of images not labeled. We notice the pattern that usually experts have difficulties distinguishing the areas around what they recognize as clouds. The borderlands between cloudy and clear surfaces are certainly more challenging to determine. 
+In this study, we primarily focus on three of the MISR images. These three images contain 115110, 115229 and 115217 pixels respectively. However, not all pixels are labeled with confident experts' classification. As shown in in Figure \ref{fig:map3}, there are considerable portions of images not labeled. We notice the pattern that usually experts have difficulties distinguishing the areas around what they recognize as clouds. It is understandable that the borderlands between cloudy and clear surfaces are more challenging to determine. 
 
-We can also observe that labeled clouds are often clustered in chunks. Therefore, adjacent pixels' labels are not independent and instead seem to have very high positive correlations, for example if a pixel's neighbors are all labelled as clouds, it is highly likely that it is also part of the cloud. 
+We can also observe that labeled clouds are often clustered in chunks. Therefore, adjacent pixels' labels are not independent and instead seem to have very high positive correlations. For example, if a pixel's neighbors are all labeled as clouds, it is highly likely that it is also part of the cloud. 
 
 In Table 1, we present the percentages of expert labels in each image.
-Since we have no confident expert opinion on unlabeled pixels, they are viewed as missing values. 
+Since we have no confident expert opinion on unlabeled pixels, they are viewed as missing / unknown values. 
 After removing unlabeled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information. 
 ```{r}
 t1 <- image_1 %>% summarise(`Cloud Labels` = mean(Cloud == "1"), `Clear Labels` = mean(Cloud == "-1"), `Unknown` = mean(Cloud == "0")) %>% mutate(Image = "1")
@@ -107,7 +135,7 @@ knitr::kable(rbind(t1, t2, t3),
 ```
 
 
-In specific, each pixel has eight features. The first three are physically useful features: for characterizing the scattering properties of ice- and snow-covered surfaces the correlation (`CORR`) of MISR images of the same scene from different MISR viewing directions, the standard deviation (`SD`) of MISR nadir camera pixel values across a scene, and a normalized difference angular index (`NDAI`) that characterizes the changes in a scene with changes in the MISR view direction.
+In specific, each pixel has eight features. The first three are physically useful features for characterizing the scattering properties of ice and snow covered surfaces: the correlation (`CORR`) of MISR images of the same scene from different MISR viewing directions, the standard deviation (`SD`) of MISR nadir camera pixel values across a scene, and a normalized difference angular index (`NDAI`) that characterizes the changes in a scene with changes in the MISR view direction.
 
 The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (DF), $60.0^{\circ}$ (CF), $45.6^{\circ}$ (BF), and $26.1^{\circ}$ (AF) in the forward direction and $0.0^{\circ}$ (AN) in the nadir direction. 
 
@@ -116,6 +144,7 @@ The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (DF),
 
 <!-- (c) Perform a visual and quantitative EDA of the dataset, e.g., summarizing (i) pair- wise relationship between the features themselves and (ii) the relationship between the expert labels with the individual features. Do you notice differences between the two classes (cloud, no cloud) based on the radiance or other features (CORR, NDAI, SD)? -->
 
+Conducting a EDA on the available features gives a preliminary picture of the relationship between potential predictors and response. Figure \ref{fig:hist_cov} shows that
 
 ```{r hist covariate, fig.cap="\\label{fig:hist_cov}Density distributions of features that describe cloud and clear pixels.", fig.width=10, fig.height=3}
 All_Image <- rbind(Image_1, Image_2, Image_3)
@@ -149,17 +178,16 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 <!-- (a) (Data Split) Split the entire data (imagem1.txt, imagem2.txt, imagem3.txt) into three sets: training, validation and test. Think carefully about how to split the data. Suggest at least two non-trivial different ways of splitting the data which takes into account that the data is not i.i.d. -->
 
-\subsection{Data Spliting}
+\subsection{Data Splitting}
+Before building models, it is important to prepare the data as training, validation and testing sets so that we can make the best use of the data and evaluate our models.
+The key idea of our data splitting is to take into account the fact that this data set is not i.i.d. Therefore, we propose the two following ways of dividing data into blocks. 
 
-Before building models, it is important to prepare the data as training, validation and testing sets so that we can evaluate our models.
-The key idea of data spliting is to take into account the fact that this data is not i.i.d. Therefore, we propose the two following ways of dividing data into blocks. 
 
+**A. Horizontal Cuts**: The first method cuts each image horizontally in order to ensure each resulting block has a reasonable portion of clouds and clear surfaces. 
+Basically, each image is cut into five horizontal blocks by evenly dividing Y coordinates (shown in Figure \ref{fig:cut_split}), and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
+This methods splits the data into 61.27% training data, 18.66% validation data and 20.07% testing data (roughly 3:1:1). 
 
-**Horizontal Cuts**: The first method cuts each image horizontally in order to ensure each block has a reasonable portion of clouds and clear surfaces. 
-Bacially, each image is cut into five horizontal blocks, and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
-This methods splits the data into 61.27% training data, 18.66% validation data and 20.07% testing data. 
-
-```{r split 1, fig.cap="\\label{fig:cut_split}The first data spliting method is to divide each image horizontally.", fig.width=12, fig.height=4}
+```{r split 1, fig.cap="\\label{fig:cut_split}The first data splitting method is to divide each image horizontally.", fig.width=12, fig.height=4, out.width="90%"}
 seperate_fold <- function(train_data) {
   
   fold_1 <- train_data %>% filter( Y_coord  < 383*0.2 )
@@ -203,10 +231,9 @@ Image_all_Cut <- rbind(Cut_1, Cut_2, Cut_3)
 ```
 
 
-**K-means Clusters**: The second method of blocked data spliting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image's datapoints into five distinct groups. Again three of these are used for training data, one is for validation and the last one is for testing. 
-The K-means method splits the data into 60.72% training data, 20.04% validation data and 19.24% testing data. 
+**B. K-means Clusters**: The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image's datapoints into five distinct groups (according to X-Y coordinates). Again, shown in Figure \ref{fig:kmean_split}, three of these are used for training data, one is for validation and the last one is for testing. The K-means method splits all datapoints into 60.72% training data, 20.04% validation data and 19.24% testing data. 
 
-```{r split 2, fig.cap="\\label{fig:kmean_split}The second data spliting method is to divide based on the K-means algorithm.", fig.width=12, fig.height=4}
+```{r split 2, fig.cap="\\label{fig:kmean_split}The second data splitting method is to divide based on the K-means algorithm.", fig.width=12, fig.height=4, out.width="90%"}
 set.seed(8848)
 
 KM_1 <- kmeans(Image_1[,1:2], centers = 5, nstart = 25)
@@ -250,11 +277,11 @@ knitr::kable(
   rbind(
     Image_all_Cut %>%
       group_by(Type) %>%
-      dplyr::summarise(`Perct Cloud` = mean(Cloud == "1")) %>%
+      dplyr::summarise(`Cloud Prop` = mean(Cloud == "1")) %>%
       mutate(Method = "Horizontal Cuts"),
     Image_all_KM %>%
       group_by(Type) %>%
-      dplyr::summarise(`Perct Cloud` = mean(Cloud == "1")) %>%
+      dplyr::summarise(`Cloud Prop` = mean(Cloud == "1")) %>%
       mutate(Method = "K-means")
   ),
   caption = "Proportions of cloud pixels in each set",
@@ -265,7 +292,38 @@ knitr::kable(
 ```
 
 
-(b) (Baseline) Report the accuracy of a trivial classifier which sets all labels to -1 (cloud-free) on the validation set and on the test set. In what scenarios will such a classifier have high average accuracy? Hint: Such a step provides a baseline to ensure that the classification problems at hand is not trivial.
+\subsection{Baseline Accuracy}
+<!-- Report the accuracy of a trivial classifier which sets all labels to -1 (cloud-free) on the validation set and on the test set. In what scenarios will such a classifier have high average accuracy? Hint: Such a step provides a baseline to ensure that the classification problems at hand is not trivial. -->
+
+We can examine the accuracy of a trivial classifier which sets all labels to -1 on the validation set and on the test set as shown in the table below. Logically, the accuracy of this trivial classifier depends entirely on the percentage of cloud free pixels labeled in the data. If the image is mostly cloud free, then labeling all points as -1 would easily achieve a high accuracy. 
+
+```{r accuaracy of trival predictor}
+cut_v <- Image_all_Cut %>% 
+  filter(Type == "Validation")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(`Data Type` = "Validation", Accuracy = mean(Predict == Cloud)) %>% mutate(Method = "Horizontal Cuts")
+
+cut_t <- Image_all_Cut %>% 
+  filter(Type == "Test")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(`Data Type` = "Test", Accuracy = mean(Predict == Cloud)) %>% mutate(Method = "Horizontal Cuts")
+
+
+km_v <- Image_all_KM %>% 
+  filter(Type == "Validation")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(`Data Type` = "Validation", Accuracy = mean(Predict == Cloud)) %>% mutate(Method = "K-means")
+
+km_t <- Image_all_KM %>% 
+  filter(Type == "Test")%>% 
+  mutate(Predict = "-1") %>% 
+  summarise(`Data Type` = "Test", Accuracy = mean(Predict == Cloud)) %>% mutate(Method = "K-means")
+
+knitr::kable(rbind(cut_v, cut_t, km_v, km_t),
+    caption = "Accuracy of a trivial classifier that sets all labels to -1",
+    booktabs = T ) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
+```
 
 
 (c) (First order importance) Assuming the expert labels as the truth, and without using fancy classification methods, suggest three of the “best” features, using quantitative and visual justification. Define your “best” feature criteria clearly. Only the relevant plots are necessary. Be sure to give this careful consideration, as it relates to subsequent problems.
@@ -276,6 +334,8 @@ knitr::kable(
 \section{Modeling}
 
 (a) Try several classification methods and assess their fit using cross-validation (CV). Provide a commentary on the assumptions for the methods you tried and if they are satisfied in this case. Since CV does not have a validation set, you can merge your training and validation set to fit your CV model. Report the accuracies across folds (and not just the average across folds) and the test accuracy. CV-results for both the ways of creating folds (as answered in part 2(a)) should be reported. Provide a brief commentary on the results. Make sure you honestly mention all the classification methods you have tried.
+
+In the modeling section, we tried a number of classification methods, including logistic regression, LDA, QDA, Naive Bayes, KNN, etc. 
 
 (b) Use ROC curves to compare the different methods. Choose a cutoff value and highlight it on the ROC curve. Explain your choice of the cutoff value.
 

@@ -555,26 +555,31 @@ Image_all_KM %>%
 # 2.b
 
 ```{r accuaracy of trival predictor}
-Image_all_Cut %>% 
+cut_v <- Image_all_Cut %>% 
   filter(Type == "Validation")%>% 
   mutate(Predict = "-1") %>% 
-  summarise(Accuracy = mean(Predict == Cloud))
+  summarise(`Data Type` = "Validation", Accuracy = mean(Predict == Cloud))
 
-Image_all_Cut %>% 
+cut_t <- Image_all_Cut %>% 
   filter(Type == "Test")%>% 
   mutate(Predict = "-1") %>% 
-  summarise(Accuracy = mean(Predict == Cloud))
+  summarise(`Data Type` = "Test", Accuracy = mean(Predict == Cloud))
 
 
-Image_all_KM %>% 
+km_v <- Image_all_KM %>% 
   filter(Type == "Validation")%>% 
   mutate(Predict = "-1") %>% 
-  summarise(Accuracy = mean(Predict == Cloud))
+  summarise(`Data Type` = "Validation", Accuracy = mean(Predict == Cloud))
 
-Image_all_KM %>% 
+km_t <- Image_all_KM %>% 
   filter(Type == "Test")%>% 
   mutate(Predict = "-1") %>% 
-  summarise(Accuracy = mean(Predict == Cloud))
+  summarise(`Data Type` = "Test", Accuracy = mean(Predict == Cloud))
+
+knitr::kable(rbind(cut_v, cut_t, km_v, km_t),
+    caption = "Proportions of Cloudy and Clear Surfaces by Expert Labeling",
+    booktabs = T ) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
 ```
 
  scenario with high accuracy: all clear in test and validation sets
