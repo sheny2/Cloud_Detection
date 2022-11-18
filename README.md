@@ -8,7 +8,7 @@ The data used as input of the algorithm should be image pixels containing a numb
 
 `CVmaster.R`: 
 
-\ 
+\newline
 
 `ROC.R`: 
 
