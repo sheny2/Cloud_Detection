@@ -20,6 +20,8 @@ library(mosaic)
 library(caret)
 library(gridExtra)
 library(kableExtra)
+library(ggcorrplot)
+library(GGally)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 knitr::opts_chunk$set(fig.pos = "H")
@@ -35,6 +37,7 @@ image_3$Cloud <- factor(image_3$Cloud)
 Image_1 <- image_1 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_2 <- image_2 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
+All_Image <- rbind(Image_1, Image_2, Image_3)
 ```
 
 
@@ -46,15 +49,16 @@ Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 <!-- (a) Write a half-page summary of the paper, including at least the purpose of the study, the data, the collection method, its conclusions and potential impact. -->
 
 With the global climates getting increasingly extreme, humans are making the best use of sciences and technologies to understand the environment, especially in the Arctic region. 
-The detection of clouds in satellite images has become an important task, as cloud coverage is closely related to the surface air temperatures and atmospheric carbon dioxide levels. Yet it is a challenging problem since clouds are similar on snow- and ice-covered surface
+The detection of clouds in satellite images has become an important task, as cloud coverage is closely related to the surface air temperatures and atmospheric carbon dioxide levels. Yet it is a challenging problem since clouds are similar on snow- and ice-covered surfaces.
 In this study, we are going to examine various classification methods, build reliable models that distinguish the presence of cloud from Arctic satellite images using available features and evaluate our models' performance. 
 
-The data is obtained from a study by @yu2008. This team of researchers collected the data via the camera of Multiangle Imaging SpectroRadiometer (MISR) launched by the NASA. The data is in the forms of image pixels, with each MISR pixel covers a 275 m by 275 m region on the ground. 
+The data is obtained from a study by @yu2008. This team of researchers collected the data via the camera of Multiangle Imaging SpectroRadiometer (MISR) launched by the NASA. The data are in the forms of image pixels, with each MISR pixel covering a 275 m by 275 m region on the ground. 
 Since standard classification frameworks of clouds were not readily applicable, their goal was also to build operational cloud detection algorithms that can efficiently process the massive MISR data set one data unit at a time without requiring human intervention or expert labeling. 
 
-@yu2008 proposed two algorithm, an enhanced linear correlation matching (ELCM) algorithm based on thresholding the three features with values either fixed or data-adaptive, and an ELCM algorithm with Fisher’s quadratic discriminant analysis (ELCM-QDA). 
+@yu2008 proposed two algorithms, an enhanced linear correlation matching (ELCM) algorithm based on thresholding the three features with values either fixed or data-adaptive, and an ELCM algorithm with Fisher’s quadratic discriminant analysis (ELCM-QDA). 
 
-Their results suggest that both proposed algorithms are computationally efficient for operational processing of the massive MISR data sets. The accuracy and coverage of ELCM are better and more informative compared with conventional MISR operational algorithms. This findings provides important implications and further analysis of MISR data. 
+Their results suggest that both proposed algorithms are computationally efficient for operational processing of the massive MISR data sets. The accuracy and coverage of ELCM are better and more informative compared with conventional MISR operational algorithms. This findings provides important implications and foundations for further analysis of MISR data. 
+
 
 \subsection{Data Description}
 
@@ -116,11 +120,11 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 ```
 In this study, we primarily focus on three of the MISR images. These three images contain 115110, 115229 and 115217 pixels respectively. However, not all pixels are labeled with confident experts' classification. As shown in in Figure \ref{fig:map3}, there are considerable portions of images not labeled. We notice the pattern that usually experts have difficulties distinguishing the areas around what they recognize as clouds. It is understandable that the borderlands between cloudy and clear surfaces are more challenging to determine. 
 
-We can also observe that labeled clouds are often clustered in chunks. Therefore, adjacent pixels' labels are not independent and instead seem to have very high positive correlations. For example, if a pixel's neighbors are all labeled as clouds, it is highly likely that it is also part of the cloud. 
+We can also observe that labeled clouds are often clustered in chunks. Therefore, adjacent pixels' labels are not independent and instead seem to have very high positive correlations. For example, if a pixel's neighbors are all labeled as clouds, it is highly likely that it is also labeled as part of the cloud. 
 
 In Table 1, we present the percentages of expert labels in each image.
 Since we have no confident expert opinion on unlabeled pixels, they are viewed as missing / unknown values. 
-After removing unlabeled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information. 
+After removing unlabeled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information (labels and features). 
 ```{r}
 t1 <- image_1 %>% summarise(`Cloud Labels` = mean(Cloud == "1"), `Clear Labels` = mean(Cloud == "-1"), `Unknown` = mean(Cloud == "0")) %>% mutate(Image = "1")
 
@@ -144,11 +148,20 @@ The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (DF),
 
 <!-- (c) Perform a visual and quantitative EDA of the dataset, e.g., summarizing (i) pair- wise relationship between the features themselves and (ii) the relationship between the expert labels with the individual features. Do you notice differences between the two classes (cloud, no cloud) based on the radiance or other features (CORR, NDAI, SD)? -->
 
-Conducting a EDA on the available features gives a preliminary picture of the relationship between potential predictors and response. Figure \ref{fig:hist_cov} shows that
+Conducting a EDA on the available features gives a preliminary picture of the relationship within potential predictors as well as with the response. First of all, we notice in Figure \ref{fig:corrplot} that there is positive correlation between the features. The correlation is particularly strong and positive among the five radiance angles. For example, `BF`, `AF` and `AN` are very strongly correlated. We also see positive correlations between `NADI`, `CORR` and `SD`.
 
-```{r hist covariate, fig.cap="\\label{fig:hist_cov}Density distributions of features that describe cloud and clear pixels.", fig.width=10, fig.height=3}
-All_Image <- rbind(Image_1, Image_2, Image_3)
+However, the correlations between the first three features (`NADI`, `CORR` and `SD`) and five radiance angles (`Df`, `CF`, `BF`, `AF`, `AN`) are mostly negative.
 
+```{r pariwise covariate, fig.cap="\\label{fig:corrplot} Pair-wise correlation between available features.", out.width="50%"}
+All_Image |>
+select(-Y_coord, -X_coord, -Cloud) |>
+cor() |>
+ggcorrplot(hc.order = TRUE)
+```
+
+Figure \ref{fig:hist_cov} shows that for pixels labeled as cloud, their `NADI`, `CORR` and `SD` are likely to be higher than those labeled as no cloud. This distinct pattern provides strong support to use these features as predictors of our classification models. It also seems reasonable to have a log transformation of `SD` so that it is in a similar scale as  other features. 
+
+```{r hist covariate, fig.cap="\\label{fig:hist_cov}Density distributions of three features that describe cloud and clear pixels.", fig.width=9, fig.height=3, out.width="85%"}
 hist_1 <- All_Image %>% 
   ggplot(aes(x = NDAI )) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
@@ -169,6 +182,38 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
              hist_2 + ggeasy::easy_center_title(),
              hist_3 + ggeasy::easy_center_title(),
              hist_4 + ggeasy::easy_center_title(),
+             nrow = 2)
+```
+
+In terms of other features, we can see that the density distributions of radiance angles of cloud and cloud-free pixels are pretty consistent across angles in Figure \ref{fig:hist_cov2}. The radiance angles of cloud pixels are usually wider and right skewed, whereas the radiance angles of cloud-free pixels are usually higher and distributed in a bimodal shape. The distributions between cloud and cloud-free pixels are not as separable and distinct as the first three features. 
+
+```{r hist covariate2, fig.cap="\\label{fig:hist_cov2}Density distributions of radiance angles from cloud and clear pixels.", fig.width=10, fig.height=3}
+hist_1 <- All_Image %>% 
+  ggplot(aes(x = DF )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_2 <- All_Image %>% 
+  ggplot(aes(x = CF )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_3 <- All_Image %>% 
+  ggplot(aes(x = BF )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_4 <- All_Image %>% 
+  ggplot(aes(x = AF )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+hist_5 <- All_Image %>% 
+  ggplot(aes(x = AN )) +
+  geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
+
+
+grid.arrange(hist_1 + ggeasy::easy_center_title(),
+             hist_2 + ggeasy::easy_center_title(),
+             hist_3 + ggeasy::easy_center_title(),
+             hist_4 + ggeasy::easy_center_title(),
+             hist_5 + ggeasy::easy_center_title(),
              nrow = 2)
 ```
 
