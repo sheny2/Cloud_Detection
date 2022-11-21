@@ -19,6 +19,9 @@ library(gridExtra)
 library(MASS)
 library(e1071)
 library(class)
+library(tree)
+library(randomForest)
+library(gbm)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
 ```
@@ -633,6 +636,8 @@ cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$AN)
 # 3.a
 
 ```{r train and test}
+load("Image_all_Cut.RData")
+load("Image_all_KM.RData")
 Image_Train_Cut <- Image_all_Cut %>%  filter(Type != "Test")
 Image_Test_Cut <- Image_all_Cut %>%  filter(Type == "Test")
 Image_Train_KM <- Image_all_KM %>%  filter(Type != "Test")
@@ -641,8 +646,6 @@ Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 
 
 ### call CVmaster from separate R file
-
-
 
 # Remeber to transform variables! log
 
@@ -830,6 +833,77 @@ roc_knn[[i]] <- ROC(
 ```
 
 
+#decision tree
+```{r}
+tree_cls <- tree(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut)
+summary(tree_cls)
+plot(tree_cls)
+text(tree_cls, pretty=0)
+
+
+pred_y_tree_test <- predict(tree_cls, Image_Test_Cut, 'class')
+accuracy <- sum(pred_y_tree_test == Image_Test_Cut$Cloud)/nrow(Image_Test_Cut)
+accuracy
+
+
+tree_cls <- tree(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM)
+summary(tree_cls)
+plot(tree_cls)
+text(tree_cls, pretty=0)
+
+
+pred_y_tree_test <- predict(tree_cls, Image_Test_KM, 'class')
+accuracy <- sum(pred_y_tree_test == Image_Test_KM$Cloud)/nrow(Image_Test_KM)
+accuracy
+```
+
+#random forest
+```{r}
+rf_cls <- randomForest(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut, importance = TRUE)
+rf_cls
+
+pred_y_rf_test <- predict(rf_cls, Image_Test_Cut)
+accuracy <- sum(pred_y_rf_test == Image_Test_Cut$Cloud)/nrow(Image_Test_Cut)
+
+accuracy
+varImpPlot(rf_cls)
+
+```
+
+
+#boosted tree
+```{r}
+Image_Train_Cut$Cloud01 <- factor(ifelse(Image_Train_Cut$Cloud == "-1", "0", Image_Train_Cut$Cloud))
+levels(Image_Train_Cut$Cloud01) <- c("0", "1")
+Image_Test_Cut$Cloud01 <- factor(ifelse(Image_Test_Cut$Cloud == "-1", "0", Image_Test_Cut$Cloud))
+levels(Image_Test_Cut$Cloud01) <- c("0", "1")
+
+
+gbm_train_plot = function(d = 2){
+# note that we need to make sure gbm labels are between 0 and 1, and integers
+  gbm_cls <- gbm(
+    as.integer(Cloud01) - 1 ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN,
+    data = Image_Train_Cut,
+    interaction.depth = d,
+    distribution = "bernoulli",
+    n.trees = 5000
+  )
+summary(gbm_cls)
+Bs <- seq(500) * 10
+test_err <- rep(0, length(Bs))
+for (i in seq(500)){
+predicted_local <- predict(gbm_cls, Image_Test_Cut, "response",
+n.trees=Bs[i])
+predicted_y <- as.integer(predicted_local > 0.5)
+true_y <- as.integer(Image_Test_Cut$Cloud01) -1
+test_err[i] <- 1 - sum(predicted_y==true_y)/nrow(Image_Test_Cut)
+}
+gbm_err_df <- data.frame(Bs = Bs, test_err=test_err)
+ggplot(data = gbm_err_df) +
+geom_line(aes(x=Bs, y=test_err))+ ylim(0.1, 0.25)
+}
+gbm_train_plot(d=2)
+```
 
 
 
