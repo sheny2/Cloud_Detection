@@ -230,7 +230,7 @@ The key idea of our data splitting is to take into account the fact that this da
 
 **A. Horizontal Cuts**: The first method cuts each image horizontally in order to ensure each resulting block has a reasonable portion of clouds and clear surfaces. 
 Basically, each image is cut into five horizontal blocks by evenly dividing Y coordinates (shown in Figure \ref{fig:cut_split}), and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
-This methods splits the data into 61.27% training data, 18.66% validation data and 20.07% testing data (roughly 3:1:1). 
+This methods splits the data into 58.59% training data, 19.03% validation data and 22.38% testing data (roughly 3:1:1). 
 
 ```{r split 1, fig.cap="\\label{fig:cut_split}The first data splitting method is to divide each image horizontally.", fig.width=12, fig.height=4, out.width="90%"}
 seperate_fold <- function(train_data) {
@@ -241,11 +241,11 @@ seperate_fold <- function(train_data) {
   fold_4 <- train_data %>% filter( 383*0.6 <= Y_coord, Y_coord  < 383*0.8 )
   fold_5 <- train_data %>% filter( 383*0.8 <= Y_coord )
   
-return( rbind(fold_1 %>% mutate(Type = "Test"),
-      fold_2 %>% mutate(Type = "Validation"),
+return( rbind(fold_1 %>% mutate(Type = "Train"),
+      fold_2 %>% mutate(Type = "Train"),
       fold_3 %>% mutate(Type = "Train"),
-      fold_4 %>% mutate(Type = "Train"),
-      fold_5 %>% mutate(Type = "Train") ) ) 
+      fold_4 %>% mutate(Type = "Test"),
+      fold_5 %>% mutate(Type = "Validation") ) ) 
 }
 
 Cut_1 <- seperate_fold(Image_1)

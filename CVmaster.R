@@ -114,7 +114,7 @@ CVmaster <-
     }
     
     
-    colnames(Accuracy) = c(1:K, "Average")
+    colnames(Accuracy) = c(paste("fold ", 1:K, sep = ""), "CV Average")
     
     prediction
     Accuracy

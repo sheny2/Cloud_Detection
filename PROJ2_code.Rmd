@@ -464,11 +464,11 @@ seperate_fold <- function(train_data) {
   fold_4 <- train_data %>% filter( 383*0.6 <= Y_coord, Y_coord  < 383*0.8 )
   fold_5 <- train_data %>% filter( 383*0.8 <= Y_coord )
   
-return( rbind(fold_1 %>% mutate(Type = "Test"),
-      fold_2 %>% mutate(Type = "Validation"),
+return( rbind(fold_1 %>% mutate(Type = "Train"),
+      fold_2 %>% mutate(Type = "Train"),
       fold_3 %>% mutate(Type = "Train"),
-      fold_4 %>% mutate(Type = "Train"),
-      fold_5 %>% mutate(Type = "Train") ) ) 
+      fold_4 %>% mutate(Type = "Test"),
+      fold_5 %>% mutate(Type = "Validation") ) ) 
 }
 
 Cut_1 <- seperate_fold(Image_1)
@@ -649,18 +649,35 @@ Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 
 # Remeber to transform variables! log
 
+```{r}
+source("CVmaster.R")
+```
+
+
 ```{r, warning=F}
 set.seed(8848)
-CVmaster(
+
+# Cut
+cv_result = CVmaster(
   classifier = "Logistic",
   train_coord = Image_Train_Cut[, 1:2],
-  train_feature = Image_Train_Cut[, 4:11],
+  train_feature = Image_Train_Cut[, c(4:11)],
   train_label = Image_Train_Cut[, 3],
   K = 10,
   loss_fun = "Accuracy"
 )
 
-CVmaster(
+glm_test <- glm(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+        data = Image_Test_Cut,family = 'binomial')
+
+prob <- predict(glm_test, Image_Test_Cut, type = "response")
+prediction <- ifelse(prob > 0.5, 1,-1)
+test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
+
+result_logit_Cut <- cbind(classifier = "Logistic", data = "Horizontal Cut", cv_result, `Test Accuracy` = test_accuracy)
+
+# KM
+cv_result <- CVmaster(
   classifier = "Logistic",
   train_coord = Image_Train_KM[, 1:2],
   train_feature = Image_Train_KM[, 4:11],
@@ -668,12 +685,28 @@ CVmaster(
   K = 10,
   loss_fun = "Accuracy"
 )
+
+glm_test <- glm(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+        data = Image_Test_KM,family = 'binomial')
+
+prob <- predict(glm_test, Image_Test_KM, type = "response")
+prediction <- ifelse(prob > 0.5, 1,-1)
+test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
+
+result_logit_KM <- cbind(classifier = "Logistic", data = "K-means", cv_result, `Test Accuracy` = test_accuracy) 
+
+
+rbind(result_logit_Cut, result_logit_KM)  %>% 
+  as_tibble() %>% 
+  mutate_at(c("fold 1","fold 2","fold 3","fold 4","fold 5","fold 6","fold 7","fold 8","fold 9","fold 10","CV Average", "Test Accuracy"), as.numeric) %>% 
+  mutate(across(where(is.numeric), ~ round(., 4)))
 ```
 
 
 ```{r, warning=F}
+# Cut
 set.seed(8848)
-CVmaster(
+cv_result <- CVmaster(
   classifier = "LDA",
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
@@ -682,7 +715,15 @@ CVmaster(
   loss_fun = "Accuracy"
 )
 
-CVmaster(
+lda_test <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Test_Cut)
+prediction <- predict(lda_test, Image_Test_Cut)$class
+test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
+
+result_lda_Cut <- cbind(classifier = "LDA", data = "Horizontal Cut", cv_result, `Test Accuracy` = test_accuracy)
+
+# KM
+cv_result <- CVmaster(
   classifier = "LDA",
   train_coord = Image_Train_KM[, 1:2],
   train_feature = Image_Train_KM[, 4:11],
@@ -690,11 +731,25 @@ CVmaster(
   K = 10,
   loss_fun = "Accuracy"
 )
+
+lda_test <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Test_KM)
+prediction = predict(lda_test, Image_Test_KM)$class
+test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
+
+result_lda_KM <- cbind(classifier = "LDA", data = "K-means", cv_result, `Test Accuracy` = test_accuracy)
+
+rbind(result_lda_Cut, result_lda_KM)  %>% 
+  as_tibble() %>% 
+  mutate_at(c("fold 1","fold 2","fold 3","fold 4","fold 5","fold 6","fold 7","fold 8","fold 9","fold 10","CV Average", "Test Accuracy"), as.numeric) %>% 
+  mutate(across(where(is.numeric), ~ round(., 4)))
 ```
 
 ```{r, warning=F}
 set.seed(8848)
-CVmaster(
+
+# Cut
+cv_result <- CVmaster(
   classifier = "QDA",
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
@@ -703,8 +758,15 @@ CVmaster(
   loss_fun = "Accuracy"
 )
 
+qda_test <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Test_Cut)
+prediction <- predict(qda_test, Image_Test_Cut)$class
+test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
 
-CVmaster(
+result_qda_Cut <- cbind(classifier = "QDA", data = "Horizontal Cut", cv_result, `Test Accuracy` = test_accuracy)
+
+# KM
+cv_result <- CVmaster(
   classifier = "QDA",
   train_coord = Image_Train_KM[, 1:2],
   train_feature = Image_Train_KM[, 4:11],
@@ -712,11 +774,27 @@ CVmaster(
   K = 10,
   loss_fun = "Accuracy"
 )
+
+qda_test <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Test_KM)
+prediction <- predict(qda_test, Image_Test_KM)$class
+test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
+
+result_qda_KM <- cbind(classifier = "QDA", data = "K-means", cv_result, `Test Accuracy` = test_accuracy)
+
+
+rbind(result_qda_Cut, result_qda_KM)  %>% 
+  as_tibble() %>% 
+  mutate_at(c("fold 1","fold 2","fold 3","fold 4","fold 5","fold 6","fold 7","fold 8","fold 9","fold 10","CV Average", "Test Accuracy"), as.numeric) %>% 
+  mutate(across(where(is.numeric), ~ round(., 4)))
 ```
+
 
 ```{r, warning=F}
 set.seed(8848)
-CVmaster(
+
+# Cut
+cv_result <- CVmaster(
   classifier = "NB",
   train_coord = Image_Train_Cut[, 1:2],
   train_feature = Image_Train_Cut[, 4:11],
@@ -725,8 +803,15 @@ CVmaster(
   loss_fun = "Accuracy"
 )
 
+NB_test <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Test_Cut)
+prediction <- predict(NB_test, Image_Test_Cut)
+test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
 
-CVmaster(
+result_NB_Cut <- cbind(classifier = "Naive Bayes", data = "Horizontal Cut", cv_result, `Test Accuracy` = test_accuracy)
+
+# KM
+cv_result <- CVmaster(
   classifier = "NB",
   train_coord = Image_Train_KM[, 1:2],
   train_feature = Image_Train_KM[, 4:11],
@@ -734,7 +819,23 @@ CVmaster(
   K = 10,
   loss_fun = "Accuracy"
 )
+
+NB_test <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Test_KM)
+prediction <- predict(NB_test, Image_Test_KM)
+test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
+
+
+result_NB_KM <- cbind(classifier = "Naive Bayes", data = "K-means", cv_result, `Test Accuracy` = test_accuracy)
+
+
+rbind(result_NB_Cut, result_NB_KM)  %>% 
+  as_tibble() %>% 
+  mutate_at(c("fold 1","fold 2","fold 3","fold 4","fold 5","fold 6","fold 7","fold 8","fold 9","fold 10","CV Average", "Test Accuracy"), as.numeric) %>% 
+  mutate(across(where(is.numeric), ~ round(., 4)))
 ```
+
+
 ```{r, warning=F}
 set.seed(8848)
 CVmaster(
@@ -756,6 +857,7 @@ CVmaster(
   loss_fun = "Accuracy"
 )
 ```
+
 
 ```{r, warning=F}
 set.seed(8848)
