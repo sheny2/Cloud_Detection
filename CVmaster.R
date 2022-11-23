@@ -86,21 +86,40 @@ CVmaster <-
     }
     
     
+    dat$Cloud01 <- factor(ifelse(dat$train_label == "-1", "0", dat$train_label))
+    levels(dat$Cloud01) <- c("0", "1")
     
-    if (classifier == "SVM")
+    if (classifier == "Boosting Tree")
     {
-      SVM_model <- list()
-      prediction <- list()
-      for (i in 1:K) {
-        dat_CV_train = dat %>% filter(fold_index != i)
-        dat_CV_test = dat %>% filter(fold_index == i)
-        SVM_model[[i]] = svm(dat_CV_train %>% dplyr::select(-train_label),
-                             dat_CV_train$train_label)  
-        prediction[[i]] = predict(SVM_model[[i]], dat_CV_test %>% dplyr::select(-train_label), 
-                                  decision.values = TRUE)
+      # prediction <- list()
+      prediction.list <- list()
+      Eta=exp(-(0:7))
+      depth = c(2:6)
+      Accuracy = matrix(NA,10,K+1)
+      for (j in 1:5){
+        prediction.list[[j]]=list()
+        for (i in 1:K) {
+          dat_CV_train = dat %>% filter(fold_index != i)
+          dat_CV_test = dat %>% filter(fold_index == i)
+          boosting_model <- xgboost(
+            data = as.matrix(dat_CV_train[, 1:ncol(train_feature)]),
+            label = as.matrix(dat_CV_train$Cloud01),
+            max.depth = depth[j],
+            eta = 0.01,
+            nthread = parallel::detectCores(),
+            nrounds = 3,
+            objective = "binary:logistic",
+            verbose = 0
+          )
+          pred <- predict(boosting_model, as.matrix(dat_CV_test[,1:ncol(train_feature)]))
+          prediction.list[[j]][[i]] <- as.numeric(pred > 0.5)
+          Accuracy[j, i] = mean(prediction.list[[j]][[i]] == dat_CV_test$Cloud01)
+        }
       }
+      Accuracy[,K+1]=apply(Accuracy[,-(K+1)], FUN = mean, 1)
+      prediction = prediction.list[[which.max(Accuracy[,K+1])]]
+      
     }
-    
     
     if (loss_fun == "Accuracy")
     {
@@ -108,16 +127,13 @@ CVmaster <-
       for (j in 1:K)
       {
         dat_CV_test = dat %>% filter(fold_index == j)
-        Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$train_label)
+        Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$Cloud01)
       }
       Accuracy[1, K + 1] = mean(Accuracy[1, 1:K])
     }
     
     
     colnames(Accuracy) = c(paste("fold ", 1:K, sep = ""), "CV Average")
-    
-    prediction
-    Accuracy
     
     return(Accuracy)
   }

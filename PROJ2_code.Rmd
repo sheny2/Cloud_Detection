@@ -24,6 +24,8 @@ library(randomForest)
 library(gbm)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
+
+source("CVmaster.R")
 ```
 
 
@@ -649,10 +651,6 @@ Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 
 # Remeber to transform variables! log
 
-```{r}
-source("CVmaster.R")
-```
-
 
 ```{r, warning=F}
 set.seed(8848)
@@ -668,7 +666,7 @@ cv_result = CVmaster(
 )
 
 glm_test <- glm(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-        data = Image_Test_Cut,family = 'binomial')
+        data = Image_Train_Cut,family = 'binomial')
 
 prob <- predict(glm_test, Image_Test_Cut, type = "response")
 prediction <- ifelse(prob > 0.5, 1,-1)
@@ -687,7 +685,7 @@ cv_result <- CVmaster(
 )
 
 glm_test <- glm(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-        data = Image_Test_KM,family = 'binomial')
+        data = Image_Train_KM,family = 'binomial')
 
 prob <- predict(glm_test, Image_Test_KM, type = "response")
 prediction <- ifelse(prob > 0.5, 1,-1)
@@ -716,7 +714,7 @@ cv_result <- CVmaster(
 )
 
 lda_test <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-    data = Image_Test_Cut)
+    data = Image_Train_Cut)
 prediction <- predict(lda_test, Image_Test_Cut)$class
 test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
 
@@ -733,7 +731,7 @@ cv_result <- CVmaster(
 )
 
 lda_test <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-    data = Image_Test_KM)
+    data = Image_Train_KM)
 prediction = predict(lda_test, Image_Test_KM)$class
 test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
 
@@ -744,6 +742,8 @@ rbind(result_lda_Cut, result_lda_KM)  %>%
   mutate_at(c("fold 1","fold 2","fold 3","fold 4","fold 5","fold 6","fold 7","fold 8","fold 9","fold 10","CV Average", "Test Accuracy"), as.numeric) %>% 
   mutate(across(where(is.numeric), ~ round(., 4)))
 ```
+
+
 
 ```{r, warning=F}
 set.seed(8848)
@@ -759,7 +759,7 @@ cv_result <- CVmaster(
 )
 
 qda_test <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-    data = Image_Test_Cut)
+    data = Image_Train_Cut)
 prediction <- predict(qda_test, Image_Test_Cut)$class
 test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
 
@@ -776,7 +776,7 @@ cv_result <- CVmaster(
 )
 
 qda_test <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-    data = Image_Test_KM)
+    data = Image_Train_KM)
 prediction <- predict(qda_test, Image_Test_KM)$class
 test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
 
@@ -804,7 +804,7 @@ cv_result <- CVmaster(
 )
 
 NB_test <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-    data = Image_Test_Cut)
+    data = Image_Train_Cut)
 prediction <- predict(NB_test, Image_Test_Cut)
 test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
 
@@ -821,7 +821,7 @@ cv_result <- CVmaster(
 )
 
 NB_test <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
-    data = Image_Test_KM)
+    data = Image_Train_KM)
 prediction <- predict(NB_test, Image_Test_KM)
 test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
 
@@ -884,6 +884,12 @@ CVmaster(
 
 # ROC 
 
+
+```{r}
+source("ROC.R")
+```
+
+
 ```{r}
 library(pROC)
 
@@ -937,8 +943,10 @@ roc_knn[[i]] <- ROC(
 
 #decision tree
 ```{r}
+set.seed(8848)
+
 tree_cls <- tree(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut)
-summary(tree_cls)
+# summary(tree_cls)
 plot(tree_cls)
 text(tree_cls, pretty=0)
 
@@ -949,7 +957,7 @@ accuracy
 
 
 tree_cls <- tree(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM)
-summary(tree_cls)
+# summary(tree_cls)
 plot(tree_cls)
 text(tree_cls, pretty=0)
 
@@ -974,13 +982,120 @@ varImpPlot(rf_cls)
 
 
 #boosted tree
+
 ```{r}
 Image_Train_Cut$Cloud01 <- factor(ifelse(Image_Train_Cut$Cloud == "-1", "0", Image_Train_Cut$Cloud))
 levels(Image_Train_Cut$Cloud01) <- c("0", "1")
 Image_Test_Cut$Cloud01 <- factor(ifelse(Image_Test_Cut$Cloud == "-1", "0", Image_Test_Cut$Cloud))
 levels(Image_Test_Cut$Cloud01) <- c("0", "1")
 
+Image_Train_KM$Cloud01 <- factor(ifelse(Image_Train_KM$Cloud == "-1", "0", Image_Train_KM$Cloud))
+levels(Image_Train_KM$Cloud01) <- c("0", "1")
+Image_Test_KM$Cloud01 <- factor(ifelse(Image_Test_KM$Cloud == "-1", "0", Image_Test_KM$Cloud))
+levels(Image_Test_KM$Cloud01) <- c("0", "1")
+```
 
+```{r, warning=F, cache = T}
+source("CVmaster.R")
+
+# cut 
+cv_result <- CVmaster(
+  classifier = "Boosting Tree",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, 4:11],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+
+boost_model <- xgboost(
+  data = as.matrix(Image_Train_Cut[, 4:11]),
+  label = as.matrix(Image_Train_Cut$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic"
+)
+
+
+pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+prediction <- as.numeric(pred > 0.5)
+test_accuracy <- mean(prediction == Image_Test_Cut$Cloud01)
+
+result_BT_Cut <- cbind(classifier = "Boosting Trees", data = "Horizontal Cut", cv_result, `Test Accuracy` = test_accuracy)
+
+
+# KM
+cv_result <- CVmaster(
+  classifier = "Boosting Tree",
+  train_coord = Image_Train_KM[, 1:2],
+  train_feature = Image_Train_KM[, 4:11],
+  train_label = Image_Train_KM[, 3],
+  K = 10,
+  loss_fun = "Accuracy"
+)
+
+boost_model <- xgboost(
+  data = as.matrix(Image_Train_KM[, 4:11]),
+  label = as.matrix(Image_Train_KM$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic"
+)
+
+
+pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
+prediction <- as.numeric(pred > 0.5)
+test_accuracy <- mean(prediction == Image_Test_KM$Cloud01)
+
+result_BT_KM <- cbind(classifier = "Boosting Trees", data = "K-means", cv_result, `Test Accuracy` = test_accuracy)
+```
+
+```{r}
+library(xgboost)
+
+set.seed(8848)
+
+# Tested multiple times, deptth = 4 is the best
+# Cut
+boost_model <- xgboost(
+  data = as.matrix(Image_Train_Cut[, 4:11]),
+  label = as.matrix(Image_Train_Cut$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic"
+)
+
+
+pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+prediction <- as.numeric(pred > 0.5)
+mean(prediction == Image_Test_Cut$Cloud01)
+
+
+# KM
+boost_model <- xgboost(
+  data = as.matrix(Image_Train_KM[, 4:11]),
+  label = as.matrix(Image_Train_KM$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic"
+)
+
+
+pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
+prediction <- as.numeric(pred > 0.5)
+mean(prediction == Image_Test_KM$Cloud01)
+```
+
+
+```{r}
 gbm_train_plot = function(d = 2){
 # note that we need to make sure gbm labels are between 0 and 1, and integers
   gbm_cls <- gbm(
@@ -988,7 +1103,7 @@ gbm_train_plot = function(d = 2){
     data = Image_Train_Cut,
     interaction.depth = d,
     distribution = "bernoulli",
-    n.trees = 5000
+    n.trees = 500
   )
 summary(gbm_cls)
 Bs <- seq(500) * 10
@@ -1005,6 +1120,32 @@ ggplot(data = gbm_err_df) +
 geom_line(aes(x=Bs, y=test_err))+ ylim(0.1, 0.25)
 }
 gbm_train_plot(d=2)
+```
+
+
+
+## all result
+
+```{r}
+all_result <- rbind(result_logit_Cut, result_logit_KM,
+      result_lda_Cut, result_lda_KM,
+      result_qda_Cut, result_qda_KM,
+      result_NB_Cut, result_NB_KM,
+      result_BT_Cut, result_BT_KM)  %>% 
+  as_tibble() %>% 
+  mutate_at(c("fold 1","fold 2","fold 3","fold 4","fold 5","fold 6","fold 7","fold 8","fold 9","fold 10","CV Average", "Test Accuracy"), as.numeric) %>% 
+  mutate(across(where(is.numeric), ~ round(., 4)))
+
+# write.csv(all_result, file = "all_result.csv", row.names = F)
+```
+
+```{r}
+read.csv("all_result.csv")
+
+knitr::kable(all_result,
+    caption = "CV Results and Test Accuracy based on Two ways of Data Splitting",
+    booktabs = T ) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
 ```
 
 
