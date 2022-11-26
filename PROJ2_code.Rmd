@@ -63,7 +63,6 @@ any(apply(image_3, 2, is.na))
 ```
 
 
-
 ```{r feature boxplot}
 # image_1 %>% 
 # ggplot() + geom_boxplot(aes(x=Cloud, y=SD)) 
