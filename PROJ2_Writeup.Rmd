@@ -380,7 +380,24 @@ knitr::kable(rbind(cut_v, cut_t, km_v, km_t),
 
 (a) Try several classification methods and assess their fit using cross-validation (CV). Provide a commentary on the assumptions for the methods you tried and if they are satisfied in this case. Since CV does not have a validation set, you can merge your training and validation set to fit your CV model. Report the accuracies across folds (and not just the average across folds) and the test accuracy. CV-results for both the ways of creating folds (as answered in part 2(a)) should be reported. Provide a brief commentary on the results. Make sure you honestly mention all the classification methods you have tried.
 
-In the modeling section, we tried a number of classification methods, including logistic regression, LDA, QDA, Naive Bayes, KNN, etc. 
+In the modeling section, we examine a number of classification methods using cross-validation, including logistic regression, LDA, QDA, Naive Bayes and boosting trees. The results are shown in the table below. 
+
+```{r}
+all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% select(-CV.Average, -Test.Accuracy)
+
+# all_result %>% select(1:2, fold.1) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.1)
+# all_result %>% select(1:2, fold.2) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.2)
+# all_result %>% select(1:2, fold.3) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.3)
+# all_result %>% select(1:2, fold.4) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.4)
+# all_result %>% select(1:2, fold.5) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.5)
+# all_result %>% select(1:2, fold.6) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.6)
+# all_result %>% select(1:2, fold.7) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.7)
+
+knitr::kable(all_result,
+    caption = "10-fold CV Results and Test Accuracy based on Two ways of Data Splitting",
+    booktabs = T ) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position", position = "center", font_size = 5)
+```
 
 (b) Use ROC curves to compare the different methods. Choose a cutoff value and highlight it on the ROC curve. Explain your choice of the cutoff value.
 
