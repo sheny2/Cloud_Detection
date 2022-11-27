@@ -228,8 +228,8 @@ Before building models, it is important to prepare the data as training, validat
 The key idea of our data splitting is to take into account the fact that this data set is not i.i.d. Therefore, we propose the two following ways of dividing data into blocks. 
 
 
-**A. Horizontal Cuts**: The first method cuts each image horizontally in order to ensure each resulting block has a reasonable portion of clouds and clear surfaces. 
-Basically, each image is cut into five horizontal blocks by evenly dividing Y coordinates (shown in Figure \ref{fig:cut_split}), and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
+**Method 1. Horizontal Cuts**: The first method cuts each image horizontally in order to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. 
+Basically, each image is cut into five blocks by evenly dividing Y coordinates (shown in Figure \ref{fig:cut_split}), and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
 This methods splits the data into 58.59% training data, 19.03% validation data and 22.38% testing data (roughly 3:1:1). 
 
 ```{r split 1, fig.cap="\\label{fig:cut_split}The first data splitting method is to divide each image horizontally.", fig.width=12, fig.height=4, out.width="90%"}
@@ -276,7 +276,7 @@ Image_all_Cut <- rbind(Cut_1, Cut_2, Cut_3)
 ```
 
 
-**B. K-means Clusters**: The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image's datapoints into five distinct groups (according to X-Y coordinates). Again, shown in Figure \ref{fig:kmean_split}, three of these are used for training data, one is for validation and the last one is for testing. The K-means method splits all datapoints into 60.72% training data, 20.04% validation data and 19.24% testing data. 
+**Method 2. K-means Clusters**: The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image's datapoints into five distinct groups (according to X-Y coordinates). Again, shown in Figure \ref{fig:kmean_split}, three of these are used for training data, one is for validation and the last one is for testing. The K-means method splits all datapoints into 60.72% training data, 20.04% validation data and 19.24% testing data. 
 
 ```{r split 2, fig.cap="\\label{fig:kmean_split}The second data splitting method is to divide based on the K-means algorithm.", fig.width=12, fig.height=4, out.width="90%"}
 set.seed(8848)
@@ -319,7 +319,7 @@ The table below describes how much cloud pixels there are in each set after two 
 # prop.table(table(Image_all_KM$Type))
 
 knitr::kable(
-  rbind(
+  cbind(
     Image_all_Cut %>%
       group_by(Type) %>%
       dplyr::summarise(`Cloud Prop` = mean(Cloud == "1")) %>%
@@ -338,9 +338,10 @@ knitr::kable(
 
 
 \subsection{Baseline Accuracy}
+
 <!-- Report the accuracy of a trivial classifier which sets all labels to -1 (cloud-free) on the validation set and on the test set. In what scenarios will such a classifier have high average accuracy? Hint: Such a step provides a baseline to ensure that the classification problems at hand is not trivial. -->
 
-We can examine the accuracy of a trivial classifier which sets all labels to -1 on the validation set and on the test set as shown in the table below. Logically, the accuracy of this trivial classifier depends entirely on the percentage of cloud free pixels labeled in the data. If the image is mostly cloud free, then labeling all points as -1 would easily achieve a high accuracy. 
+We can examine the accuracy of a trivial classifier which sets all labels to -1 on the validation set and on the test set as shown in the table below. This classifier assumes that the image has no cloud pixels at all. Logically, the accuracy, or the success rate, of this trivial classifier depends entirely on the percentage of actual cloud free pixels labeled in the data. If the image is mostly cloud free, then labeling all points as -1 would easily achieve a high accuracy. 
 
 ```{r accuaracy of trival predictor}
 cut_v <- Image_all_Cut %>% 
@@ -370,11 +371,19 @@ knitr::kable(rbind(cut_v, cut_t, km_v, km_t),
   kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
 ```
 
+Here it is shown that labeling all points as -1 can only achieve an accuracy of 66.15% and 67.04% on the test data sets, which shows that to achieve high accuracy in this classification problem is not trivially easy. This also sets a baseline of reference for our subsequent classfication methods. 
 
-(c) (First order importance) Assuming the expert labels as the truth, and without using fancy classification methods, suggest three of the “best” features, using quantitative and visual justification. Define your “best” feature criteria clearly. Only the relevant plots are necessary. Be sure to give this careful consideration, as it relates to subsequent problems.
+\subsection{First order importance}
 
-(d) Write a generic cross validation (CV) function CVmaster in R that takes a generic classifier, training features, training labels, number of folds K and a loss function (at least classification accuracy should be there) as inputs and outputs the K-fold CV loss on the training set. Please remember to put it in your github folder in Section 5.
+<!-- (c) (First order importance) Assuming the expert labels as the truth, and without using fancy classification methods, suggest three of the “best” features, using quantitative and visual justification. Define your “best” feature criteria clearly. Only the relevant plots are necessary. Be sure to give this careful consideration, as it relates to subsequent problems. -->
 
+We consider `NADI`, `CORR` and `logSD` (notice that we apply a log transformation on `SD` as justified in section 1.3) as the three most important features in classifying pixels. 
+
+\subsection{Cross Validation}
+
+<!-- (d) Write a generic cross validation (CV) function CVmaster in R that takes a generic classifier, training features, training labels, number of folds K and a loss function (at least classification accuracy should be there) as inputs and outputs the K-fold CV loss on the training set. Please remember to put it in your github folder in Section 5. -->
+
+As shown in our code appendix and github repository, our `CVmaster` function is able to take a generic classifier, training features, training labels, number of folds K and a loss function as inputs, perform K-fold cross validation (CV) to assess the classification methods, and outputs the K-fold CV loss on the training data. 
 
 \section{Modeling}
 
@@ -384,14 +393,6 @@ In the modeling section, we examine a number of classification methods using cro
 
 ```{r}
 all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% select(-CV.Average, -Test.Accuracy)
-
-# all_result %>% select(1:2, fold.1) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.1)
-# all_result %>% select(1:2, fold.2) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.2)
-# all_result %>% select(1:2, fold.3) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.3)
-# all_result %>% select(1:2, fold.4) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.4)
-# all_result %>% select(1:2, fold.5) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.5)
-# all_result %>% select(1:2, fold.6) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.6)
-# all_result %>% select(1:2, fold.7) %>% tidyr::pivot_wider(names_from = classifier:data, values_from = fold.7)
 
 knitr::kable(all_result,
     caption = "10-fold CV Results and Test Accuracy based on Two ways of Data Splitting",
