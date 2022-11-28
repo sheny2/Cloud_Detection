@@ -20,8 +20,9 @@ library(mosaic)
 library(caret)
 library(gridExtra)
 library(kableExtra)
-library(ggcorrplot)
 library(GGally)
+library(ggcorrplot)
+library(corrplot)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 knitr::opts_chunk$set(fig.pos = "H")
@@ -38,6 +39,9 @@ Image_1 <- image_1 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_2 <- image_2 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 All_Image <- rbind(Image_1, Image_2, Image_3)
+
+load("Image_all_Cut.RData")
+load("Image_all_KM.RData")
 ```
 
 
@@ -152,11 +156,16 @@ Conducting a EDA on the available features gives a preliminary picture of the re
 
 However, the correlations between the first three features (`NADI`, `CORR` and `SD`) and five radiance angles (`Df`, `CF`, `BF`, `AF`, `AN`) are mostly negative.
 
-```{r pariwise covariate, fig.cap="\\label{fig:corrplot} Pair-wise correlation between available features.", out.width="50%"}
+```{r pariwise covariate, fig.cap="\\label{fig:corrplot} Pair-wise correlations between eight available features.", out.width="50%"}
 All_Image |>
-select(-Y_coord, -X_coord, -Cloud) |>
+dplyr::select(-Y_coord, -X_coord, -Cloud) |>
 cor() |>
 ggcorrplot(hc.order = TRUE)
+
+# All_Image %>% 
+# dplyr::select(-Y_coord, -X_coord, -Cloud) %>% 
+#   cor(use="pairwise.complete.obs") %>% 
+#   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
 ```
 
 Figure \ref{fig:hist_cov} shows that for pixels labeled as cloud, their `NADI`, `CORR` and `SD` are likely to be higher than those labeled as no cloud. This distinct pattern provides strong support to use these features as predictors of our classification models. It also seems reasonable to have a log transformation of `SD` so that it is in a similar scale as  other features. 
@@ -328,7 +337,7 @@ knitr::kable(
       group_by(Type) %>%
       dplyr::summarise(`Cloud Prop` = mean(Cloud == "1")) %>%
       mutate(Method = "K-means")
-  ),
+  )[,c(3,1,2,6,4,5)],
   caption = "Proportions of cloud pixels in each set",
   booktabs = T) %>%
   kable_styling(latex_options = "HOLD_position",
@@ -365,25 +374,40 @@ km_t <- Image_all_KM %>%
   mutate(Predict = "-1") %>% 
   summarise(`Data Type` = "Test", Accuracy = mean(Predict == Cloud)) %>% mutate(Method = "K-means")
 
-knitr::kable(rbind(cut_v, cut_t, km_v, km_t),
+knitr::kable(rbind(cut_v, cut_t, km_v, km_t)[,c(3,1,2)],
     caption = "Accuracy of a trivial classifier that sets all labels to -1",
     booktabs = T ) %>%
   kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
 ```
 
-Here it is shown that labeling all points as -1 can only achieve an accuracy of 66.15% and 67.04% on the test data sets, which shows that to achieve high accuracy in this classification problem is not trivially easy. This also sets a baseline of reference for our subsequent classfication methods. 
+Here it is shown that labeling all points as -1 can only achieve an accuracy of 66.15% and 67.04% on the test data sets, which shows that to achieve high accuracy in this classification problem is not trivially easy. This also sets a baseline of reference for our subsequent classification methods. 
 
 \subsection{First order importance}
 
 <!-- (c) (First order importance) Assuming the expert labels as the truth, and without using fancy classification methods, suggest three of the “best” features, using quantitative and visual justification. Define your “best” feature criteria clearly. Only the relevant plots are necessary. Be sure to give this careful consideration, as it relates to subsequent problems. -->
 
-We consider `NADI`, `CORR` and `logSD` (notice that we apply a log transformation on `SD` as justified in section 1.3) as the three most important features in classifying pixels. 
+We consider `NADI`, `CORR` and `logSD` (notice that we apply a log transformation on `SD` as justified in section 1.3) as the three most important features when classifying pixels. Firstly, the EDA as shown in Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2} has shown that the density distributions of the first three variables are more distinct between cloud and non-cloud pixels compared with the angular radiance variables. 
 
-\subsection{Cross Validation}
+Then we also examine the pair-wise correlation between the response, `Cloud`, and each of the eight features. Looking at the two bottom rows in Figure \ref{fig:corrplot_cloud}, we notice that the correlation between `Cloud` and `NADI`, `CORR` and `logSD` are much stronger than the other five features. 
+
+```{r pariwise cloud, fig.cap="\\label{fig:corrplot_cloud} Pair-wise correlations between response (Cloud) and features (eight covaraites).", out.width="50%"}
+All_Image$logSD <- log(All_Image$SD)
+model.matrix(~0+., data=All_Image %>% 
+dplyr::select(-Y_coord, -X_coord)  %>% 
+dplyr::select(Cloud, NDAI, CORR, logSD, DF, CF, BF, AF, AN))%>% 
+  cor(use="pairwise.complete.obs") %>% 
+  ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
+```
+
+We also apply PCA on the eight features, which suggests that first three PCs could explain over 95% of the total variance. Among the first three PCs, `NADI`, `CORR` and `logSD` again consistently contribute a lot to the total variance. Thus, we tentatively suggest these three as the best features without model justification.
+
+\subsection{Cross Validation Method}
 
 <!-- (d) Write a generic cross validation (CV) function CVmaster in R that takes a generic classifier, training features, training labels, number of folds K and a loss function (at least classification accuracy should be there) as inputs and outputs the K-fold CV loss on the training set. Please remember to put it in your github folder in Section 5. -->
 
-As shown in our code appendix and github repository, our `CVmaster` function is able to take a generic classifier, training features, training labels, number of folds K and a loss function as inputs, perform K-fold cross validation (CV) to assess the classification methods, and outputs the K-fold CV loss on the training data. 
+After splitting training and test data, we use various classification methods to train models that can classify cloud and non-cloud pixels based on available features. To make the best use of the training data, we employ cross validation as a way to compare models. 
+
+As shown in our code appendix and github repository, our `CVmaster` function is able to take a generic classifier, training features, training labels, number of folds K and a loss function as inputs, then perform K-fold cross validation (CV) to assess the classification methods, and finally outputs the K-fold CV loss on the training data. 
 
 \section{Modeling}
 

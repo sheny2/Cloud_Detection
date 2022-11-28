@@ -608,7 +608,13 @@ load("Image_all_KM.RData")
 
 ```{r}
 pca_result <- prcomp(Image_all_Cut %>% dplyr::select(NDAI:logSD), cetner = T, scale. = T) 
-as.matrix(pca_result$rotation )
+as.matrix(pca_result$rotation)
+
+eigenvalues <- (pca_result$sdev)^2
+eigs_cum <- cumsum(eigenvalues)/sum(eigenvalues)
+ggplot() + geom_point(aes(x = 1:length(eigenvalues), y=eigs_cum)) +
+geom_line(aes(x = 1:length(eigenvalues), y=eigs_cum)) + theme_bw() +
+  labs(x = "First PCs", y = "Fraction of total variance explained")       
 
 cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$NDAI)
 cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$logSD)
