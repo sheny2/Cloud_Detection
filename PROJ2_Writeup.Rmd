@@ -451,9 +451,9 @@ boost_model <- xgboost(
   label = as.matrix(Image_all_KM$Cloud01),
   max.depth = 4,
   eta = 0.01,
-  nthread = parallel::detectCores(),
   nrounds = 3,
-  objective = "binary:logistic"
+  verbose = F, nthread = parallel::detectCores(),
+  objective = "binary:logistic",
 )
 
 
