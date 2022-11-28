@@ -23,6 +23,13 @@ library(kableExtra)
 library(GGally)
 library(ggcorrplot)
 library(corrplot)
+library(MASS)
+library(e1071)
+library(class)
+library(tree)
+library(randomForest)
+library(gbm)
+library(xgboost)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 knitr::opts_chunk$set(fig.pos = "H")
@@ -416,7 +423,8 @@ As shown in our code appendix and github repository, our `CVmaster` function is 
 In the modeling section, we examine a number of classification methods using cross-validation, including logistic regression, LDA, QDA, Naive Bayes and boosting trees. The results are shown in the table below. 
 
 ```{r}
-all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% select(-CV.Average, -Test.Accuracy)
+all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% 
+  dplyr::select(-CV.Average, -Test.Accuracy)
 
 knitr::kable(all_result,
     caption = "10-fold CV Results and Test Accuracy based on Two ways of Data Splitting",
@@ -432,6 +440,56 @@ knitr::kable(all_result,
 \section{Diagnostics}
 
 (a) Do an in-depth analysis of a good classification model of your choice by showing some diagnostic plots or information related to convergence or parameter estimation.
+
+```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees", fig.width = 12, fig.height = 4, out.width="85%"}
+# prediction plot
+Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
+levels(Image_all_KM$Cloud01) <- c("0", "1")
+
+boost_model <- xgboost(
+  data = as.matrix(Image_all_KM[, 4:11]),
+  label = as.matrix(Image_all_KM$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic"
+)
+
+
+all_pred <- predict(boost_model, as.matrix(Image_all_KM[, 4:11]))
+Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > 0.5))
+
+
+# draw plots
+Palette_2 <- c("gray", "white")
+
+map1 <- Image_all_KM %>%
+  filter(image == "1") %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
+  theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate", color = "Prediction") +
+  scale_colour_manual(values = Palette_2)
+
+map2 <- Image_all_KM %>%
+  filter(image == "2") %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
+  theme_dark() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map3 <- Image_all_KM %>%
+  filter(image == "3") %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
+  theme_dark() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map_legend <- lemon::g_legend(map1 +  guides(colour = guide_legend(nrow = 1)))
+
+grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map2 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map3 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1),
+             map_legend, nrow = 2, heights = c(10, 1))
+```
 
 
 (b) For your best classification model(s), do you notice any patterns in the misclassification errors? Again, use quantitative and visual methods of analysis. Do you notice problems in particular regions, or in specific ranges of feature values?

@@ -22,6 +22,7 @@ library(class)
 library(tree)
 library(randomForest)
 library(gbm)
+library(xgboost)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(out.width = "100%", fig.align = 'center')
 
@@ -1059,9 +1060,10 @@ test_accuracy <- mean(prediction == Image_Test_KM$Cloud01)
 result_BT_KM <- cbind(classifier = "Boosting Trees", data = "K-means", cv_result, `Test Accuracy` = test_accuracy)
 ```
 
-```{r}
-library(xgboost)
 
+```{r}
+# only test accuracy
+library(xgboost)
 set.seed(8848)
 
 # Tested multiple times, deptth = 4 is the best
@@ -1099,7 +1101,58 @@ prediction <- as.numeric(pred > 0.5)
 mean(prediction == Image_Test_KM$Cloud01)
 ```
 
+```{r, fig.width = 12, fig.height = 4, out.width="85%"}
+# boosting prediction plot
+Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
+levels(Image_all_KM$Cloud01) <- c("0", "1")
 
+boost_model <- xgboost(
+  data = as.matrix(Image_all_KM[, 4:11]),
+  label = as.matrix(Image_all_KM$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic"
+)
+
+
+all_pred <- predict(boost_model, as.matrix(Image_all_KM[, 4:11]))
+Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > 0.5))
+
+
+# draw plots
+Palette_2 <- c("gray", "white")
+
+map1 <- Image_all_KM %>%
+  filter(image == "1") %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
+  theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate", color = "Prediction") +
+  scale_colour_manual(values = Palette_2)
+
+map2 <- Image_all_KM %>%
+  filter(image == "2") %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
+  theme_dark() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map3 <- Image_all_KM %>%
+  filter(image == "3") %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
+  theme_dark() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
+  scale_colour_manual(values = Palette_2)
+
+map_legend <- lemon::g_legend(map1 +  guides(colour = guide_legend(nrow = 1)))
+
+grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map2 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         map3 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 1),
+             map_legend, nrow = 2, heights = c(10, 1))
+```
+
+
+# old boost code
 ```{r}
 gbm_train_plot = function(d = 2){
 # note that we need to make sure gbm labels are between 0 and 1, and integers
@@ -1126,7 +1179,6 @@ geom_line(aes(x=Bs, y=test_err))+ ylim(0.1, 0.25)
 }
 gbm_train_plot(d=2)
 ```
-
 
 
 ## all result
