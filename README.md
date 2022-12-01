@@ -13,13 +13,14 @@ There are two non-trivial ways of data splitting used in this project.
 
 A. Horizontal Cut
 The first method cuts each image horizontally in order to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. Basically, each image is cut into five blocks by evenly dividing Y coordinates, and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
-[split 1-1.pdf](https://github.com/sheny2/STA521-Project-2/files/10129049/split.1-1.pdf)
+<img width="762" alt="Screenshot 2022-11-30 at 10 45 18 PM" src="https://user-images.githubusercontent.com/67173948/204961118-8d285b8d-d55b-4c9a-b526-fee38064b507.png">
 
 B. K-Means Clusters
 The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image’s datapoints into five distinct groups (according to X-Y coordinates). Again, three of these are used for training data, one is for validation and the last one is for testing.
-[split 2-1.pdf](https://github.com/sheny2/STA521-Project-2/files/10129051/split.2-1.pdf)
+<img width="759" alt="Screenshot 2022-11-30 at 10 45 04 PM" src="https://user-images.githubusercontent.com/67173948/204961108-4be9ef21-bb8e-4da9-87c0-76aeb59338a2.png">
 
-We recommend users to fit classification methods after both ways of data processing and verify that the CV results should be roughly similiar. 
+
+There are, of course, other ways of splitting blocked data. We recommend future users to try to fit classification methods on different ways of data processing and verify that the CV results should be roughly similiar. 
 
 
 ## Usage of `CVmaster.R`:
@@ -31,6 +32,8 @@ The data used as input of the algorithm should be image pixels. For each pixel, 
 -- Expert labels of cloud or non-cloud: `Cloud` = `-1` or `1`;
 
 -- Potential covaraites include `NDAI`, `logSD`, `CORR`, `DF`, `CF`, `BF`, `AF`, and `AN`.
+
+Users have the option to give a generic classification method, for example Logistic Regression, LDA, QDA, Naive Bayes and Boosting Trees.
 
 
 
