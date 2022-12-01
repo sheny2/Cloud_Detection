@@ -37,7 +37,7 @@ Users have the option to give a generic classification method, for example Logis
 
 Since it is cross validation, users could also choose K, the number of folds, and a loss function, which currently only has default as accuracy (1-misclassification error). 
 
-The `CVmaster` function takes the above input and would return the accuracy at each fold as well as an overall CV average accuracy.
+The `CVmaster` function takes the above input and would return the accuracy at each fold as well as an overall CV average accuracy. The CV accuracy is thus a useful metric of evaluating the performance of the classification method on the training data.
 
 
 ## Usage of `ROC.R` 
