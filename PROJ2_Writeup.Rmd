@@ -501,6 +501,8 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 (e) Write a paragraph for your conclusion.
 
 
+Overall, there are various methods that we can try to employ on the cloud classification problem. Of the methods discussed in this report, boosting trees yield the best performance on the training and test data. 
+
 
 \section{Reproducibility}
 
