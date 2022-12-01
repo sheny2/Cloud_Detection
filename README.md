@@ -12,12 +12,12 @@ Considering the non-independent nature of the image pixels, users should be care
 There are two non-trivial ways of data splitting used in this project. 
 
 A. Horizontal Cut
+The first method cuts each image horizontally in order to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. Basically, each image is cut into five blocks by evenly dividing Y coordinates, and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
+[split 1-1.pdf](https://github.com/sheny2/STA521-Project-2/files/10129049/split.1-1.pdf)
 
-
-<img width="467" alt="Screenshot 2022-11-30 at 10 41 55 PM" src="https://user-images.githubusercontent.com/67173948/204960704-55c14581-c714-451c-8044-88c243a6f75b.png">
-
-B. K-Means
-
+B. K-Means Clusters
+The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image’s datapoints into five distinct groups (according to X-Y coordinates). Again, three of these are used for training data, one is for validation and the last one is for testing.
+[split 2-1.pdf](https://github.com/sheny2/STA521-Project-2/files/10129051/split.2-1.pdf)
 
 We recommend users to fit classification methods after both ways of data processing and verify that the CV results should be roughly similiar. 
 
