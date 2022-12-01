@@ -4,7 +4,7 @@ This project is a case study of constructing cloud detection algorithms employed
 
 Usage:
 
-The data used as input of the algorithm should be image pixels containing a number of features, including `NDAI`, `SD`, `CORR`, `DF`, `CF`, `BF`, `AF`, and `AN`. 
+The data used as input of the algorithm should be image pixels containing a number of features, including `NDAI`, `logSD`, `CORR`, `DF`, `CF`, `BF`, `AF`, and `AN`. 
 
 `CVmaster.R`: 
 
