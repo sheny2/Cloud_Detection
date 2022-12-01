@@ -423,7 +423,7 @@ As shown in our code appendix and github repository, our `CVmaster` function is 
 In this section, different machine learning algorithms including logistic regression, LDA, QDA, Naive Bayes, and gradient boosting are used to construct the classification model. Hyperparameters are selected base on cross validation accuracies. Performance is assessed through both CV error and prediction accuracy on the test data. A comparison across model fit is also conducted utilizing various performance metrics including AUC and Gini Index.
 
 \subsection{Model Fitting}
-Before fitting the chosen classification algorithms, we first assess different model assumptions and their fitness on the given data set. Logistic regression assumes linearity in the classification log odds. Although such a strong assumption is not satisfied by the data, we can adjust the classification threshold to still achieve a desirable accuracy. LDA assumes predictors in different classes follow normal distributions with the same covariance matrix $\Sigma$ but different means $\mu_j$ for the $j^{th}$ class, while QDA allows distinct class covariance matrices $\Sigma_j$ . From Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}, we can observe that covariants are hardly normal. Thus LDA and QDA's assumption of normality is unsatisfied here. Naive Bayes assumes predictors follow iid normal distributions within each class, which is also unsatisfied here. Random Forest, on the other hand, do not have any model assumptions, and should be able to provide good results.
+Before fitting the chosen classification algorithms, we first assess different model assumptions and their fitness on the given data set. Logistic regression assumes linearity in the classification log odds. Although such a strong assumption is not satisfied by the data, we can adjust the classification threshold to still achieve a desirable accuracy. LDA assumes predictors in different classes follow normal distributions with the same covariance matrix $\Sigma$ but different means $\mu_j$, while QDA allows distinct class covariance matrices $\Sigma_j$ . From Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}, we can observe that covariants are hardly normal. Thus LDA and QDA's assumption of normality is unsatisfied here. Naive Bayes makes the assumption that conditional on the class labels, predictors follow iid normal distributions. Such a assumption is also unsatisfied base on Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}. Random Forest, on the other hand, do not have any model assumptions, and should be able to provide good results.
 
 After assessment of model assumption fitness, different classifications methods are applied to the data set. For Boosting Tree algorithm, hyperparameters including max-depth of each weak learner, number of weak learners, and the  learning rate are tuned through K-fold validation. For algorithms that returns the classification probability, we determine the model threshold by consulting the Youden statistics which maximized the sum of specificity and sensitivity. Both CV and test accuracies are displayed in the following table:
 ```{r}
@@ -504,9 +504,15 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 
 (c) Based on parts 4(a) and 4(b), can you think of a better classifier? How well do you think your model will work on future data without expert labels?
 
-A potential improvement for our Xgboost model is to add $L_1$ or $L_2$ regularization terms to reduce model complexity. A simpler model reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
+A potential improvement for our Xgboost model is to add $L_1$ or $L_2$ regularization terms to reduce model complexity. A simpler model potentially reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
 
+\begin{description}
+\item[Step 1.] Utilize Pretrained XGBoost Classifier on the desired data set to get the classification probability $p_i$ for each data point $i$.
+\item[Step 2.] Define an upper bound $UB$ and lower bound $LB$, $UB$>$LB$, to be the classification thresholds. Classify data point $i$ to 1 if $p_i\ge UB$, to 0 if $p_i\le LB$. 
+\item[Step 3.] For the remaining data points $j$, where $LB<p_j<LB$, utilize KNN on geographical coordinates ($X,Y$ in this case) to classify point $j$ to the class of its cloest neighbours.
+\end{description}
 
+This methods would avoid false classification of data points within a cluster of same-class data and therefore increase the overall accuracy. However, it does not provide any performance improvements over datapoints on the cluster boundary.
 
 (d) Do your results in parts 4(a) and 4(b) change as you modify the way of splitting the data?
 

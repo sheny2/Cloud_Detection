@@ -13,11 +13,11 @@ There are two non-trivial ways of data splitting used in this project.
 
 A. Horizontal Cut
 The first method cuts each image horizontally in order to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. Basically, each image is cut into five blocks by evenly dividing Y coordinates, and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
-<img width="762" alt="Screenshot 2022-11-30 at 10 45 18 PM" src="https://user-images.githubusercontent.com/67173948/204961118-8d285b8d-d55b-4c9a-b526-fee38064b507.png">
+< img width="762" alt="Screenshot 2022-11-30 at 10 45 18 PM" src="https://user-images.githubusercontent.com/67173948/204961118-8d285b8d-d55b-4c9a-b526-fee38064b507.png">
 
 B. K-Means Clusters
 The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image’s datapoints into five distinct groups (according to X-Y coordinates). Again, three of these are used for training data, one is for validation and the last one is for testing.
-<img width="759" alt="Screenshot 2022-11-30 at 10 45 04 PM" src="https://user-images.githubusercontent.com/67173948/204961108-4be9ef21-bb8e-4da9-87c0-76aeb59338a2.png">
+< img width="759" alt="Screenshot 2022-11-30 at 10 45 04 PM" src="https://user-images.githubusercontent.com/67173948/204961108-4be9ef21-bb8e-4da9-87c0-76aeb59338a2.png">
 
 
 There are, of course, other ways of splitting blocked data. We recommend future users to try to fit classification methods on different ways of data processing and verify that the CV results should be roughly similiar. 
@@ -37,14 +37,11 @@ Users have the option to give a generic classification method, for example Logis
 
 Since it is cross validation, users could also choose K, the number of folds, and a loss function, which currently only has default as accuracy (1-misclassification error). 
 
-The `CVmaster` function takes the above input and would return the accuracy at each fold as well as an overall CV average accuracy. The CV accuracy is thus a useful metric of evaluating the performance of the classification method on the training data.
+The `CVmaster` function takes the above input and would return the training accuracy at each fold as well as an overall CV average accuracy. The CV accuracy is thus a useful metric of evaluating the performance of the classification method on the training data.
 
 
-## Usage of `ROC.R` 
+## More Model Assessment:
 
+In addition to the CV training accuracy, there are more metrics that can be used to assess models. In particularly, for models that yield predictions in the form of probabilities, users could plot ROC curves and find the best cut-off values for classifications. 
 
-
-
-
-
-
+The ROC curve of the model's prediction of test data and true test data's label can reveal how the model perform on the test data via the Area under the Curve (AUC). Based on our current data and methods, boosting trees usually yield the best results. We recommend users to carefully examine more than one assessments when fitting the classification methods on new image data.
