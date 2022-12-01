@@ -1,11 +1,19 @@
-# STA 521: Project 2 
+# STA 521: Project 2
 
 This project is a case study of constructing cloud detection algorithms employed on satellite images. 
 
 We split the data by blocks, employ a number of classfication methods and assess their performance by loss functions. 
-The primary work of model fitting and cross validation (CV) is done via `CVmaster.R` function. 
+The primary work of model fitting and cross validation (CV) is done via the `CVmaster` function. 
+For any future users who want to reproduce our analysis or train classification methods based on new image data, please refer to the following. 
 
-Usage of `CVmaster.R`:
+## Data Splitting 
+
+There are two non-trivial ways of data splitting used in this project. 
+
+
+
+
+## Usage of `CVmaster.R`:
 
 The data used as input of the algorithm should be image pixels. For each pixel, it contains the following information:
 
@@ -17,6 +25,6 @@ The data used as input of the algorithm should be image pixels. For each pixel, 
 
 
 
-`ROC.R`: 
+## Usage of `ROC.R` 
 
 
