@@ -14,6 +14,7 @@ There are two non-trivial ways of data splitting used in this project.
 A. Horizontal Cut
 The first method cuts each image horizontally in order to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. Basically, each image is cut into five blocks by evenly dividing Y coordinates, and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
 <img width="762" alt="Screenshot 2022-11-30 at 10 45 18 PM" src="https://user-images.githubusercontent.com/67173948/204961118-8d285b8d-d55b-4c9a-b526-fee38064b507.png">
+
 B. K-Means Clusters
 The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image’s datapoints into five distinct groups (according to X-Y coordinates). Again, three of these are used for training data, one is for validation and the last one is for testing.
 <img width="759" alt="Screenshot 2022-11-30 at 10 45 04 PM" src="https://user-images.githubusercontent.com/67173948/204961108-4be9ef21-bb8e-4da9-87c0-76aeb59338a2.png">
@@ -40,5 +41,10 @@ The `CVmaster` function takes the above input and would return the accuracy at e
 
 
 ## Usage of `ROC.R` 
+
+
+
+
+
 
 
