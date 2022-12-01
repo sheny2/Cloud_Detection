@@ -93,8 +93,8 @@ CVmaster <-
     {
       # prediction <- list()
       prediction.list <- list()
-      Eta=c(0.5,0.2,0.1,0.06,0.03,0.01)
-      depth = c(2:6)
+      Eta=c(0.1,0.05,0.01)
+      depth = c(2,4,6)
       Accuracy = matrix(NA,length(Eta)*length(depth),K+1)
       for (k in seq_along(Eta)){
         for (j in seq_along(depth)){
@@ -106,9 +106,9 @@ CVmaster <-
               data = as.matrix(dat_CV_train[, 1:ncol(train_feature)]),
               label = as.matrix(dat_CV_train$Cloud01),
               max.depth = depth[j],
-              eta = 0.01,
+              eta = Eta[k],
               nthread = parallel::detectCores(),
-              nrounds = 10,
+              nrounds = 1000,
               objective = "binary:logistic",
               verbose = 0
             )
@@ -121,6 +121,7 @@ CVmaster <-
       }
       Accuracy[,K+1]=apply(Accuracy[,-(K+1)], FUN = mean, 1)
       prediction = prediction.list[[which.max(Accuracy[,K+1])]]
+      best_index=which.max(Accuracy[,K+1])
       
     }
     
@@ -139,7 +140,7 @@ CVmaster <-
     colnames(Accuracy) = c(paste("fold ", 1:K, sep = ""), "CV Average")
     
     if (classifier == "Boosting Tree"){
-      return(list(Accuracy,which.max(Accuracy[,K+1])))
+      return(list(Accuracy,best_index))
     }
     
     return(Accuracy)

@@ -13,7 +13,7 @@ ROC <- function(classifier, train_feature, train_label, K = 1) {
         family = 'binomial')
         
         preds <- predict(glm_result, type = "response")
-        roc_result <- roc(train_label, preds)
+        roc_result <- roc(train_label, preds, print.auc = T)
     }
     
     

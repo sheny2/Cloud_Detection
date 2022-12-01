@@ -895,6 +895,47 @@ CVmaster(
 source("ROC.R")
 ```
 
+```{r}
+glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut, 
+family = 'binomial')
+
+preds <- predict(glm_result,  type = "response")
+
+pROC::coords(roc(Image_Train_Cut$Cloud, preds), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+preds <- predict(glm_result, Image_Test_Cut,  type = "response")
+
+# pROC::coords(roc(Image_Test_Cut$Cloud, preds), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+roc(Image_Test_Cut$Cloud, preds, print.auc = T, plot = T)
+
+
+prediction <- ifelse(preds > 0.3575289, 1, -1)
+test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
+
+
+# KM
+
+glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM, 
+family = 'binomial')
+
+preds <- predict(glm_result,  type = "response")
+
+pROC::coords(roc(Image_Train_KM$Cloud, preds), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+# pROC::coords(roc(Image_Test_Cut$Cloud, preds), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+preds <- predict(glm_result, Image_Test_KM,  type = "response")
+
+# pROC::coords(roc(Image_Test_KM$Cloud, preds), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+roc(Image_Test_KM$Cloud, preds, print.auc = T, plot = T)
+
+prediction <- ifelse(preds > 0.3700108, 1, -1)
+test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
+```
+
+
 
 ```{r}
 library(pROC)
@@ -905,7 +946,6 @@ roc_logreg <- ROC(
   train_label = Image_Train_Cut[, 3]
 )
 
-plot(roc_logreg)
 
 roc_LDA <- ROC(
   classifier = "LDA",
@@ -932,6 +972,7 @@ roc_NB <- ROC(
 
 plot(roc_NB)
 ```
+
 
 ```{r}
 roc_knn <- list()
@@ -1024,12 +1065,19 @@ boost_model <- xgboost(
   objective = "binary:logistic"
 )
 
+pred <- predict(boost_model, as.matrix(Image_Train_Cut[, 4:11]))
+pROC::coords(roc(Image_Train_Cut$Cloud01, pred), "best", transpose = FALSE)
 
 pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+
+# Cut ROC
+roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = 0.4955721)
+# pROC::coords(roc(Image_Test_Cut$Cloud01, pred), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+
 prediction <- as.numeric(pred > 0.5)
 test_accuracy <- mean(prediction == Image_Test_Cut$Cloud01)
 
-result_BT_Cut <- cbind(classifier = "Boosting Trees", data = "Horizontal Cut", cv_result, `Test Accuracy` = test_accuracy)
 
 
 # KM
@@ -1052,13 +1100,49 @@ boost_model <- xgboost(
   objective = "binary:logistic"
 )
 
+pred <- predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
+pROC::coords(roc(Image_Train_KM$Cloud01, pred), "best", transpose = FALSE)
+
 
 pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
-prediction <- as.numeric(pred > 0.5)
+
+# KM ROC
+roc_test_boosting <- roc(Image_Test_KM$Cloud01, pred)
+roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres = 0.4980169)
+# pROC::coords(roc(Image_Test_KM$Cloud01, pred), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+
+prediction <- as.numeric(pred > 0.4980169)
 test_accuracy <- mean(prediction == Image_Test_KM$Cloud01)
 
 result_BT_KM <- cbind(classifier = "Boosting Trees", data = "K-means", cv_result, `Test Accuracy` = test_accuracy)
 ```
+
+```{r}
+boost_model <- xgboost(
+  data = as.matrix(Image_Train_Cut[, 4:11]),
+  label = as.matrix(Image_Train_Cut$Cloud01),
+  max.depth = 2,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 1000,
+  objective = "binary:logistic"
+)
+
+pred <- predict(boost_model, as.matrix(Image_Train_Cut[, 4:11]))
+pROC::coords(roc(Image_Train_Cut$Cloud01, pred), "best", transpose = FALSE)
+
+pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+
+# Cut ROC
+roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = 0.49478)
+# pROC::coords(roc(Image_Test_Cut$Cloud01, pred), "best", best.method=c("closest.topleft"), transpose = FALSE)
+
+
+prediction <- as.numeric(pred > 0.5)
+test_accuracy <- mean(prediction == Image_Test_Cut$Cloud01)
+```
+
 
 
 ```{r}
@@ -1101,7 +1185,7 @@ prediction <- as.numeric(pred > 0.5)
 mean(prediction == Image_Test_KM$Cloud01)
 ```
 
-```{r, fig.width = 12, fig.height = 4, out.width="85%"}
+```{r}
 # boosting prediction plot
 Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
 levels(Image_all_KM$Cloud01) <- c("0", "1")
@@ -1121,6 +1205,16 @@ all_pred <- predict(boost_model, as.matrix(Image_all_KM[, 4:11]))
 Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > 0.5))
 
 
+# roc_boosting <- roc(Image_all_KM$Cloud01, all_pred)
+# plot(roc_boosting)
+# pROC::coords(roc_boosting, best.method=c("youden"))
+
+
+pROC::coords(roc_boosting, "best", transpose = FALSE)
+
+```
+
+```{r, fig.width = 12, fig.height = 4, out.width="85%"}
 # draw plots
 Palette_2 <- c("gray", "white")
 

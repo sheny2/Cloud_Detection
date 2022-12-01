@@ -418,10 +418,14 @@ As shown in our code appendix and github repository, our `CVmaster` function is 
 
 \section{Modeling}
 
-(a) Try several classification methods and assess their fit using cross-validation (CV). Provide a commentary on the assumptions for the methods you tried and if they are satisfied in this case. Since CV does not have a validation set, you can merge your training and validation set to fit your CV model. Report the accuracies across folds (and not just the average across folds) and the test accuracy. CV-results for both the ways of creating folds (as answered in part 2(a)) should be reported. Provide a brief commentary on the results. Make sure you honestly mention all the classification methods you have tried.
+<!--(a) Try several classification methods and assess their fit using cross-validation (CV). Provide a commentary on the assumptions for the methods you tried and if they are satisfied in this case. Since CV does not have a validation set, you can merge your training and validation set to fit your CV model. Report the accuracies across folds (and not just the average across folds) and the test accuracy. CV-results for both the ways of creating folds (as answered in part 2(a)) should be reported. Provide a brief commentary on the results. Make sure you honestly mention all the classification methods you have tried. -->
 
-In the modeling section, we examine a number of classification methods using cross-validation, including logistic regression, LDA, QDA, Naive Bayes and boosting trees. The results are shown in the table below. 
+In this section, different machine learning algorithms including logistic regression, LDA, QDA, Naive Bayes, and gradient boosting are used to construct the classification model. Hyperparameters are selected base on cross validation accuracies. Performance is assessed through both CV error and prediction accuracy on the test data. A comparison across model fit is also conducted utilizing various performance metrics including AUC and Gini Index.
 
+\subsection{Model Fitting}
+Before fitting the chosen classification algorithms, we first assess different model assumptions and their fitness on the given data set. Logistic regression assumes linearity in the classification log odds. Although such a strong assumption is not satisfied by the data, we can adjust the classification threshold to still achieve a desirable accuracy. LDA assumes predictors in different classes follow normal distributions with the same covariance matrix $\Sigma$ but different means $\mu_j$ for the $j^{th}$ class, while QDA allows distinct class covariance matrices $\Sigma_j$ . From Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}, we can observe that covariants are hardly normal. Thus LDA and QDA's assumption of normality is unsatisfied here. Naive Bayes assumes predictors follow iid normal distributions within each class, which is also unsatisfied here. Random Forest, on the other hand, do not have any model assumptions, and should be able to provide good results.
+
+After assessment of model assumption fitness, different classifications methods are applied to the data set. For Boosting Tree algorithm, hyperparameters including max-depth of each weak learner, number of weak learners, and the  learning rate are tuned through K-fold validation. For algorithms that returns the classification probability, we determine the model threshold by consulting the Youden statistics which maximized the sum of specificity and sensitivity. Both CV and test accuracies are displayed in the following table:
 ```{r}
 all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% 
   dplyr::select(-CV.Average, -Test.Accuracy)
@@ -432,7 +436,11 @@ knitr::kable(all_result,
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center", font_size = 5)
 ```
 
+As displayed in the table, Boosting Trees algorithm achieve the best CV and Test errors. This result aligns with our expectation as Boosting Tree has the weakest model assumption thus is able to fit data well. LDA, QDA, Naive Bayes, on the other hand, have a lower accuracy since their model assumptions are unsatisfied by the data. Logistic regression has a relatively low CV mean while a higher test accuracy, an explainable result since CV classification threshold is set to 0.5 while final model threshold is adjusted by Youden statistics.
+
 (b) Use ROC curves to compare the different methods. Choose a cutoff value and highlight it on the ROC curve. Explain your choice of the cutoff value.
+
+
 
 (c) (Bonus) Assess the fit using other relevant metrics. Use quantitative measures and show clean and interpretable figures!
 
@@ -495,6 +503,10 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 (b) For your best classification model(s), do you notice any patterns in the misclassification errors? Again, use quantitative and visual methods of analysis. Do you notice problems in particular regions, or in specific ranges of feature values?
 
 (c) Based on parts 4(a) and 4(b), can you think of a better classifier? How well do you think your model will work on future data without expert labels?
+
+A potential improvement for our Xgboost model is to add $L_1$ or $L_2$ regularization terms to reduce model complexity. A simpler model reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
+
+
 
 (d) Do your results in parts 4(a) and 4(b) change as you modify the way of splitting the data?
 
