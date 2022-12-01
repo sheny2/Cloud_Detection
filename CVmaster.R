@@ -80,9 +80,9 @@ CVmaster <-
         dat_CV_train = dat %>% filter(fold_index != i)
         dat_CV_test = dat %>% filter(fold_index == i)
         prediction[[i]]=knn(dat_CV_train %>% dplyr::select(-train_label),
-                          dat_CV_test %>% dplyr::select(-train_label),
-                          cl=dat_CV_train$train_label,k=5,use.all=T)
-        }
+                            dat_CV_test %>% dplyr::select(-train_label),
+                            cl=dat_CV_train$train_label,k=5,use.all=T)
+      }
     }
     
     
@@ -93,27 +93,30 @@ CVmaster <-
     {
       # prediction <- list()
       prediction.list <- list()
-      Eta=exp(-(0:7))
+      Eta=c(0.5,0.2,0.1,0.06,0.03,0.01)
       depth = c(2:6)
-      Accuracy = matrix(NA,10,K+1)
-      for (j in 1:5){
-        prediction.list[[j]]=list()
-        for (i in 1:K) {
-          dat_CV_train = dat %>% filter(fold_index != i)
-          dat_CV_test = dat %>% filter(fold_index == i)
-          boosting_model <- xgboost(
-            data = as.matrix(dat_CV_train[, 1:ncol(train_feature)]),
-            label = as.matrix(dat_CV_train$Cloud01),
-            max.depth = depth[j],
-            eta = 0.01,
-            nthread = parallel::detectCores(),
-            nrounds = 3,
-            objective = "binary:logistic",
-            verbose = 0
-          )
-          pred <- predict(boosting_model, as.matrix(dat_CV_test[,1:ncol(train_feature)]))
-          prediction.list[[j]][[i]] <- as.numeric(pred > 0.5)
-          Accuracy[j, i] = mean(prediction.list[[j]][[i]] == dat_CV_test$Cloud01)
+      Accuracy = matrix(NA,length(Eta)*length(depth),K+1)
+      for (k in seq_along(Eta)){
+        for (j in seq_along(depth)){
+          prediction.list[[(k-1)*length(depth)+j]]=list()
+          for (i in 1:K) {
+            dat_CV_train = dat %>% filter(fold_index != i)
+            dat_CV_test = dat %>% filter(fold_index == i)
+            boosting_model <- xgboost(
+              data = as.matrix(dat_CV_train[, 1:ncol(train_feature)]),
+              label = as.matrix(dat_CV_train$Cloud01),
+              max.depth = depth[j],
+              eta = 0.01,
+              nthread = parallel::detectCores(),
+              nrounds = 10,
+              objective = "binary:logistic",
+              verbose = 0
+            )
+            pred <- predict(boosting_model, as.matrix(dat_CV_test[,1:ncol(train_feature)]))
+            prediction.list[[(k-1)*length(depth)+j]][[i]] <- as.numeric(pred > 0.5)
+            print((k-1)*length(depth)+j)
+            Accuracy[(k-1)*length(depth)+j, i] = mean(prediction.list[[(k-1)*length(depth)+j]][[i]] == dat_CV_test$Cloud01)
+          }
         }
       }
       Accuracy[,K+1]=apply(Accuracy[,-(K+1)], FUN = mean, 1)
@@ -134,6 +137,10 @@ CVmaster <-
     
     
     colnames(Accuracy) = c(paste("fold ", 1:K, sep = ""), "CV Average")
+    
+    if (classifier == "Boosting Tree"){
+      return(list(Accuracy,which.max(Accuracy[,K+1])))
+    }
     
     return(Accuracy)
   }
