@@ -2,7 +2,10 @@
 
 This project is a case study of constructing cloud detection algorithms employed on satellite images. 
 
-`CVmaster.R` Usage:
+We split the data by blocks, employ a number of classfication methods and assess their performance by loss functions. 
+The primary work of model fitting and cross validation (CV) is done via `CVmaster.R` function. 
+
+Usage of `CVmaster.R`:
 
 The data used as input of the algorithm should be image pixels. For each pixel, it contains the following information:
 
