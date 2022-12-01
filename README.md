@@ -14,12 +14,12 @@ There are two non-trivial ways of data splitting used in this project.
 A. Horizontal Cut
 
 
+<img width="467" alt="Screenshot 2022-11-30 at 10 41 55 PM" src="https://user-images.githubusercontent.com/67173948/204960704-55c14581-c714-451c-8044-88c243a6f75b.png">
+
 B. K-Means
 
-![alt text](https://github.com/sheny2/STA521-Project-2/blob/PROJ2_Writeup_files/figure-latex/split 1-1.pdf?raw=true)
 
-
-We recommend users to try to fit classification methods after both ways of data processing and verify that the CV results should be roughly similiar. 
+We recommend users to fit classification methods after both ways of data processing and verify that the CV results should be roughly similiar. 
 
 
 ## Usage of `CVmaster.R`:
