@@ -1089,9 +1089,9 @@ boost_model <- xgboost(
   data = as.matrix(Image_Train_Cut[, 4:11]),
   label = as.matrix(Image_Train_Cut$Cloud01),
   max.depth = 4,
-  eta = 0.01,
+  eta = 0.05,
   nthread = parallel::detectCores(),
-  nrounds = 3,
+  nrounds = 1000,
   objective = "binary:logistic"
 )
 
@@ -1153,11 +1153,13 @@ set.seed(8848)
 boost_model <- xgboost(
   data = as.matrix(Image_Train_KM[, 4:11]),
   label = as.matrix(Image_Train_KM$Cloud01),
-  max.depth = 4,
-  eta = 0.01,
+  max.depth = 2,
+  eta = 0.05,
   nthread = parallel::detectCores(),
-  nrounds = 3,
-  objective = "binary:logistic"
+  nrounds = 1000,
+  objective = "binary:logistic",
+  colsample_bytree=0.6,
+  verbose=0
 )
 
 pred <- predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
