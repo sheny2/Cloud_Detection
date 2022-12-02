@@ -1,4 +1,4 @@
-ROC <- function(classifier, train_feature, train_label, K = 1) {
+ROC <- function(classifier, train_feature, train_label,test_data, K = 1) {
     # if classifer not in given choice
     
     dat = cbind(train_feature, train_label)
@@ -13,7 +13,12 @@ ROC <- function(classifier, train_feature, train_label, K = 1) {
         family = 'binomial')
         
         preds <- predict(glm_result, type = "response")
-        roc_result <- roc(train_label, preds, print.auc = T)
+        
+        t = pROC::coords(roc(train_label, preds), "best", transpose = FALSE)
+        
+        preds <- predict(glm_result, test_data, type = "response")
+      
+        roc_result = roc(test_data$Cloud01, preds, print.auc = T, plot = T, print.thres = t[[1]])
     }
     
     

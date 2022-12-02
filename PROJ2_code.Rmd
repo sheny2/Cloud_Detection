@@ -935,6 +935,33 @@ prediction <- ifelse(preds > 0.3700108, 1, -1)
 test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
 ```
 
+```{r, out.width="50%"}
+glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut, 
+family = 'binomial')
+
+preds <- predict(glm_result, type = "response")
+
+t = pROC::coords(roc(Image_Train_Cut$Cloud, preds), "best", transpose = FALSE)
+
+preds <- predict(glm_result, Image_Test_Cut, type = "response")
+
+roc(Image_Test_Cut$Cloud, preds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression")
+
+
+glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM, 
+family = 'binomial')
+
+preds <- predict(glm_result, type = "response")
+
+t = pROC::coords(roc(Image_Train_KM$Cloud, preds), "best", transpose = FALSE)
+
+preds <- predict(glm_result, Image_Test_KM, type = "response")
+
+roc(Image_Test_KM$Cloud, preds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression")
+```
+
+
+
 
 
 ```{r}
@@ -943,8 +970,11 @@ library(pROC)
 roc_logreg <- ROC(
   classifier = "Logistic",
   train_feature = Image_Train_Cut[, 4:11],
-  train_label = Image_Train_Cut[, 3]
+  train_label = Image_Train_Cut[, 3],
+  test_data = Image_Test_Cut
 )
+
+plot(roc_logreg)
 
 
 roc_LDA <- ROC(
@@ -1119,28 +1149,36 @@ result_BT_KM <- cbind(classifier = "Boosting Trees", data = "K-means", cv_result
 ```
 
 ```{r}
+set.seed(8848)
 boost_model <- xgboost(
-  data = as.matrix(Image_Train_Cut[, 4:11]),
-  label = as.matrix(Image_Train_Cut$Cloud01),
-  max.depth = 2,
+  data = as.matrix(Image_Train_KM[, 4:11]),
+  label = as.matrix(Image_Train_KM$Cloud01),
+  max.depth = 4,
   eta = 0.01,
   nthread = parallel::detectCores(),
-  nrounds = 1000,
+  nrounds = 3,
   objective = "binary:logistic"
 )
 
-pred <- predict(boost_model, as.matrix(Image_Train_Cut[, 4:11]))
-pROC::coords(roc(Image_Train_Cut$Cloud01, pred), "best", transpose = FALSE)
+pred <- predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
+t=pROC::coords(roc(Image_Train_KM$Cloud01, pred), "best", transpose = FALSE)
 
-pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
 
 # Cut ROC
-roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = 0.49478)
+# roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = 0.49478)
 # pROC::coords(roc(Image_Test_Cut$Cloud01, pred), "best", best.method=c("closest.topleft"), transpose = FALSE)
 
 
-prediction <- as.numeric(pred > 0.5)
-test_accuracy <- mean(prediction == Image_Test_Cut$Cloud01)
+prediction <- as.numeric(pred > t[[1]])
+test_accuracy <- mean(prediction == Image_Test_KM$Cloud01)
+
+summary(boost_model)
+
+
+# var importance plot
+xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model)
+xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model))
 ```
 
 
@@ -1199,7 +1237,6 @@ boost_model <- xgboost(
   nrounds = 3,
   objective = "binary:logistic"
 )
-
 
 all_pred <- predict(boost_model, as.matrix(Image_all_KM[, 4:11]))
 Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > 0.5))

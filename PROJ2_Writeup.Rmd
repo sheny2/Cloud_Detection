@@ -30,6 +30,7 @@ library(tree)
 library(randomForest)
 library(gbm)
 library(xgboost)
+library(pROC)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 knitr::opts_chunk$set(fig.pos = "H")
@@ -49,6 +50,10 @@ All_Image <- rbind(Image_1, Image_2, Image_3)
 
 load("Image_all_Cut.RData")
 load("Image_all_KM.RData")
+Image_Train_Cut <- Image_all_Cut %>%  filter(Type != "Test")
+Image_Test_Cut <- Image_all_Cut %>%  filter(Type == "Test")
+Image_Train_KM <- Image_all_KM %>%  filter(Type != "Test")
+Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 ```
 
 
@@ -440,7 +445,105 @@ As displayed in the table, Boosting Trees algorithm achieve the best CV and Test
 
 (b) Use ROC curves to compare the different methods. Choose a cutoff value and highlight it on the ROC curve. Explain your choice of the cutoff value.
 
+```{r}
+Image_Train_Cut$Cloud01 <- factor(ifelse(Image_Train_Cut$Cloud == "-1", "0", Image_Train_Cut$Cloud))
+levels(Image_Train_Cut$Cloud01) <- c("0", "1")
+Image_Test_Cut$Cloud01 <- factor(ifelse(Image_Test_Cut$Cloud == "-1", "0", Image_Test_Cut$Cloud))
+levels(Image_Test_Cut$Cloud01) <- c("0", "1")
 
+Image_Train_KM$Cloud01 <- factor(ifelse(Image_Train_KM$Cloud == "-1", "0", Image_Train_KM$Cloud))
+levels(Image_Train_KM$Cloud01) <- c("0", "1")
+Image_Test_KM$Cloud01 <- factor(ifelse(Image_Test_KM$Cloud == "-1", "0", Image_Test_KM$Cloud))
+levels(Image_Test_KM$Cloud01) <- c("0", "1")
+```
+
+```{r, out.width="50%",message=F,warning=F,cache=T}
+# ROC for GLM cut
+glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut, 
+family = 'binomial')
+GLMpreds <- predict(glm_result,Image_Test_Cut,type = "response")
+t = pROC::coords(roc(Image_Test_Cut$Cloud, GLMpreds), "best", transpose = FALSE)
+# GLMpreds <- predict(glm_result, Image_Test_Cut, type = "response")
+invisible(roc(Image_Test_Cut$Cloud, GLMpreds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression"))
+
+# ROC for LDA cut
+lda_result <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Train_Cut)
+LDApreds <- as.numeric(predict(lda_result, Image_Test_Cut)$class)
+invisible(roc(Image_Test_Cut$Cloud, LDApreds, print.auc = T, plot = T, main = "LDA"))
+
+# ROC for QDA cut
+qda_result <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Train_Cut)
+QDApreds <- as.numeric(predict(qda_result, Image_Test_Cut)$class)
+invisible(roc(Image_Test_Cut$Cloud, QDApreds, print.auc = T, plot = T, main = "QDA"))
+
+# ROC for NB cut
+NB_result <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Train_Cut)
+NBpreds <- as.numeric(predict(NB_result, Image_Test_Cut))
+invisible(roc(Image_Test_Cut$Cloud, NBpreds, print.auc = T, plot = T, main = "Naive Bayes"))
+
+# ROC for Boosting Trees
+boost_model <- invisible(xgboost(
+  data = as.matrix(Image_Train_Cut[, 4:11]),
+  label = as.matrix(Image_Train_Cut$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic",
+  verbose=0
+))
+
+pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+t = pROC::coords(roc(Image_Test_Cut$Cloud01, pred), "best", transpose = FALSE)
+invisible(roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]]))
+
+
+# KM
+
+glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM, 
+family = 'binomial')
+preds <- predict(glm_result,Image_Test_KM, type = "response")
+t = pROC::coords(roc(Image_Test_KM$Cloud, preds), "best", transpose = FALSE)
+roc(Image_Test_KM$Cloud, preds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression")
+
+# ROC for LDA cut
+lda_result <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Train_KM)
+LDApreds <- as.numeric(predict(lda_result, Image_Test_KM)$class)
+invisible(roc(Image_Test_KM$Cloud, LDApreds, print.auc = T, plot = T, main = "LDA"))
+
+# ROC for QDA cut
+qda_result <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Train_KM)
+QDApreds <- as.numeric(predict(qda_result, Image_Test_KM)$class)
+invisible(roc(Image_Test_KM$Cloud, QDApreds, print.auc = T, plot = T, main = "QDA"))
+
+# ROC for NB cut
+NB_result <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
+    data = Image_Train_KM)
+NBpreds <- as.numeric(predict(NB_result, Image_Test_KM))
+invisible(roc(Image_Test_KM$Cloud, NBpreds, print.auc = T, plot = T, main = "Naive Bayes"))
+
+# ROC for Boosting Trees
+boost_model <- invisible(xgboost(
+  data = as.matrix(Image_Train_KM[, 4:11]),
+  label = as.matrix(Image_Train_KM$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = 3,
+  objective = "binary:logistic",
+  verbose=0
+))
+
+pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
+t = pROC::coords(roc(Image_Test_KM$Cloud01, pred), "best", transpose = FALSE)
+invisible(roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]]))
+
+```
 
 (c) (Bonus) Assess the fit using other relevant metrics. Use quantitative measures and show clean and interpretable figures!
 
@@ -448,6 +551,33 @@ As displayed in the table, Boosting Trees algorithm achieve the best CV and Test
 \section{Diagnostics}
 
 (a) Do an in-depth analysis of a good classification model of your choice by showing some diagnostic plots or information related to convergence or parameter estimation.
+
+```{r,message=F,warning=F,cache=T}
+test_accuracy=rep(NA,20)
+train_accuracy=rep(NA,20)
+n = seq(1,1001,50)
+for (i in seq_along(n)){
+  boost_model <- xgboost(
+  data = as.matrix(Image_Train_Cut[, 4:11]),
+  label = as.matrix(Image_Train_Cut$Cloud01),
+  max.depth = 4,
+  eta = 0.01,
+  nthread = parallel::detectCores(),
+  nrounds = n[i],
+  objective = "binary:logistic",
+  verbose=0
+)
+train_pred = predict(boost_model,as.matrix(Image_Train_Cut[, 4:11]))
+t = pROC::coords(roc(Image_Train_Cut$Cloud01, train_pred), "best", transpose = FALSE)
+train_label = ifelse(train_pred>t[[1]],-1,1)
+train_accuracy[i]=mean(train_label==Image_Train_Cut$Cloud01)
+test_pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+t = pROC::coords(roc(Image_Test_Cut$Cloud01, test_pred), "best", transpose = FALSE)
+test_label = ifelse(test_pred>t[[1]],-1,1)
+test_accuracy[i]=mean(test_label==Image_Test_Cut$Cloud01)
+}
+```
+
 
 ```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees", fig.width = 12, fig.height = 4, out.width="85%"}
 # prediction plot
@@ -472,9 +602,15 @@ Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > 0.5))
 # draw plots
 Palette_2 <- c("gray", "white")
 
+map1miss = Image_all_KM %>%
+  filter(image == "1") %>%
+  filter(Cloud01!=all_prediction) %>%
+  dplyr::select(X_coord,Y_coord)
 map1 <- Image_all_KM %>%
   filter(image == "1") %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
+  geom_point(data=filter(Image_all_KM %>%
+  filter(image == "1"),Cloud01!=all_prediction),aes(x = X_coord, y = Y_coord), color="red",size = 0.5) +
   theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate", color = "Prediction") +
   scale_colour_manual(values = Palette_2)
 
@@ -504,7 +640,9 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 
 (c) Based on parts 4(a) and 4(b), can you think of a better classifier? How well do you think your model will work on future data without expert labels?
 
-A potential improvement for our Xgboost model is to add $L_1$ or $L_2$ regularization terms to reduce model complexity. A simpler model potentially reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
+With low CV and test errors, the proposed XGboost model framework will have a robust performance in future classification of unlabeled data points. Our block data splitting approach provides the functionality of mimicing a new data set. Thus the reported CV and test errors are reliable estimates of model accuracy. 
+
+Despite the high model accuracy, there are two potential improvements. One potential improvement is to add $L_1$ or $L_2$ regularization terms to reduce model complexity. A simpler model potentially reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
 
 \begin{description}
 \item[Step 1.] Utilize Pretrained XGBoost Classifier on the desired data set to get the classification probability $p_i$ for each data point $i$.
