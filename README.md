@@ -47,3 +47,5 @@ The `CVmaster` function takes the above input and would return the training accu
 In addition to the CV training accuracy, there are more metrics that can be used to assess models. In particularly, for models that yield predictions in the form of probabilities, users could plot ROC curves and find the best cut-off values for classifications. 
 
 The ROC curve of the model's prediction of test data and true test data's label can reveal how the model perform on the test data via the Area under the Curve (AUC). Based on our current data and methods, boosting trees usually yield the best results. We recommend users to carefully examine more than one assessments when fitting the classification methods on new image data.
+
+In addition, ROC curves are useful in determining the cut-off values, particuarly for logistic regression and boosting trees. We find the best cuf-off threshold based on the Youden statistics.  
