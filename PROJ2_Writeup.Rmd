@@ -15,7 +15,7 @@ bibliography: cloud.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, cache = F, warning=F, message = F)
+knitr::opts_chunk$set(echo = F, cache = T, warning = F, message = F)
 library(mosaic)
 library(caret)
 library(gridExtra)
@@ -141,6 +141,7 @@ We can also observe that labeled clouds are often clustered in chunks. Therefore
 In Table 1, we present the percentages of expert labels in each image.
 Since we have no confident expert opinion on unlabeled pixels, they are viewed as missing / unknown values. 
 After removing unlabeled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information (labels and features). 
+
 ```{r}
 t1 <- image_1 %>% summarise(`Cloud Labels` = mean(Cloud == "1"), `Clear Labels` = mean(Cloud == "-1"), `Unknown` = mean(Cloud == "0")) %>% mutate(Image = "1")
 
@@ -168,7 +169,7 @@ Conducting a EDA on the available features gives a preliminary picture of the re
 
 However, the correlations between the first three features (`NADI`, `CORR` and `SD`) and five radiance angles (`Df`, `CF`, `BF`, `AF`, `AN`) are mostly negative.
 
-```{r pariwise covariate, fig.cap="\\label{fig:corrplot} Pair-wise correlations between eight available features.", out.width="47%"}
+```{r pariwise covariate, fig.cap="\\label{fig:corrplot} Pair-wise correlations between eight available features.", out.width="45%"}
 All_Image |>
 dplyr::select(-Y_coord, -X_coord, -Cloud) |>
 cor() |>
@@ -182,7 +183,7 @@ ggcorrplot(hc.order = TRUE)
 
 Figure \ref{fig:hist_cov} shows that for pixels labeled as cloud, their `NADI`, `CORR` and `SD` are likely to be higher than those labeled as no cloud. This distinct pattern provides strong support to use these features as predictors of our classification models. It also seems reasonable to have a log transformation of `SD` so that it is in a similar scale as  other features. 
 
-```{r hist covariate, fig.cap="\\label{fig:hist_cov}Density distributions of three features that describe cloud and clear pixels.", fig.width=9, fig.height=3, out.width="85%"}
+```{r hist covariate, fig.cap="\\label{fig:hist_cov}Density distributions of three features that describe cloud and clear pixels.", fig.width=9, fig.height=3.3, out.width="92%"}
 hist_1 <- All_Image %>% 
   ggplot(aes(x = NDAI )) +
   geom_density(aes(fill = Cloud, color = Cloud), alpha = 0.7) 
@@ -562,6 +563,8 @@ invisible(roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres 
 (c) (Bonus) Assess the fit using other relevant metrics. Use quantitative measures and show clean and interpretable figures!
 
 
+
+
 \section{Diagnostics}
 
 \subsection{Examining Boosting Trees}
@@ -655,7 +658,8 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
              map_legend, nrow = 2, heights = c(10, 1))
 ```
 
-```{r importance plot, fig.cap="\\label{fig:importance_plot} Features Importance Plot in Boosting Trees Model", out.width="65%"}
+
+```{r importance plot, fig.cap="\\label{fig:importance_plot} Features Importance Plot in Boosting Trees Model", out.width="50%"}
 # xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model)
 xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model))
 
