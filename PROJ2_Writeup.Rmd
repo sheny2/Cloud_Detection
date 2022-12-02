@@ -15,7 +15,7 @@ bibliography: cloud.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, cache = F, warning=F)
+knitr::opts_chunk$set(echo = F, cache = F, warning=F, message = F)
 library(mosaic)
 library(caret)
 library(gridExtra)
@@ -471,9 +471,9 @@ par(mfrow = c(2, 5))
 # ROC for GLM cut
 glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut, 
 family = 'binomial')
+GLMpreds <- predict(glm_result,Image_Train_Cut,type = "response")
+t = pROC::coords(roc(Image_Train_Cut$Cloud, GLMpreds), "best", transpose = FALSE)
 GLMpreds <- predict(glm_result,Image_Test_Cut,type = "response")
-t = pROC::coords(roc(Image_Test_Cut$Cloud, GLMpreds), "best", transpose = FALSE)
-# GLMpreds <- predict(glm_result, Image_Test_Cut, type = "response")
 invisible(roc(Image_Test_Cut$Cloud, GLMpreds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression"))
 
 # ROC for LDA cut
@@ -506,8 +506,9 @@ boost_model <- invisible(xgboost(
   verbose=0
 ))
 
+pred <- predict(boost_model, as.matrix(Image_Train_Cut[, 4:11]))
+t = pROC::coords(roc(Image_Train_Cut$Cloud01, pred), "best", transpose = FALSE)
 pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
-t = pROC::coords(roc(Image_Test_Cut$Cloud01, pred), "best", transpose = FALSE)
 invisible(roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]], main = "Boosting Trees"))
 
 
@@ -515,9 +516,10 @@ invisible(roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres
 
 glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM, 
 family = 'binomial')
-preds <- predict(glm_result,Image_Test_KM, type = "response")
-t = pROC::coords(roc(Image_Test_KM$Cloud, preds), "best", transpose = FALSE)
-invisible(roc(Image_Test_KM$Cloud, preds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression"))
+preds <- predict(glm_result,Image_Train_KM, type = "response")
+t = pROC::coords(roc(Image_Train_KM$Cloud, preds), "best", transpose = FALSE)
+GLMpreds <- predict(glm_result,Image_Test_Cut,type = "response")
+invisible(roc(Image_Test_Cut$Cloud, GLMpreds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression"))
 
 # ROC for LDA cut
 lda_result <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
@@ -549,8 +551,9 @@ boost_model <- invisible(xgboost(
   verbose=0
 ))
 
+pred <- predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
+t = pROC::coords(roc(Image_Train_KM$Cloud01, pred), "best", transpose = FALSE)
 pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
-t = pROC::coords(roc(Image_Test_KM$Cloud01, pred), "best", transpose = FALSE)
 invisible(roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]], main = "Boosting Trees"))
 ```
 
@@ -592,7 +595,7 @@ test_accuracy[i]=mean(test_label==Image_Test_Cut$Cloud01)
 ```
 
 
-```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees, with missclassified points highlighted as red.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T}
+```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees, with missclassified points highlighted as red.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
 # prediction plot
 boost_model <- xgboost(
   data = as.matrix(Image_Train_KM[, 4:11]),
@@ -605,8 +608,11 @@ boost_model <- xgboost(
 )
 
 
+pred <- predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
+t <- invisible(pROC::coords(roc(Image_Train_KM$Cloud01, pred), "best", transpose = FALSE))
+
 all_pred <- predict(boost_model, as.matrix(Image_all_KM[, 4:11]))
-Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > 0.5))
+Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > t[[1]]))
 
 Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
 levels(Image_all_KM$Cloud01) <- c("0", "1")
@@ -649,6 +655,16 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
              map_legend, nrow = 2, heights = c(10, 1))
 ```
 
+```{r importance plot, fig.cap="\\label{fig:importance_plot} Features Importance Plot in Boosting Trees Model", out.width="65%"}
+# xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model)
+xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model))
+
+# importance.mat <- xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model)
+# barplot((importance.mat)$Gain)
+```
+
+
+
 \subsection{Patterns of Missclassification}
 
 (b) For your best classification model(s), do you notice any patterns in the misclassification errors? Again, use quantitative and visual methods of analysis. Do you notice problems in particular regions, or in specific ranges of feature values?
@@ -662,9 +678,9 @@ With low CV and test errors, the proposed XGboost model framework will have a ro
 Despite the high model accuracy, there are two potential improvements. One potential improvement is to add $L_1$ or $L_2$ regularization terms to reduce model complexity. A simpler model potentially reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
 
 \begin{description}
-\item[Step 1.] Utilize Pretrained XGBoost Classifier on the desired data set to get the classification probability $p_i$ for each data point $i$.
+\item[Step 1.] Utilize pre-trained XGBoost Classifier on the desired data set to get the classification probability $p_i$ for each data point $i$.
 \item[Step 2.] Define an upper bound $UB$ and lower bound $LB$, $UB$>$LB$, to be the classification thresholds. Classify data point $i$ to 1 if $p_i\ge UB$, to 0 if $p_i\le LB$. 
-\item[Step 3.] For the remaining data points $j$, where $LB<p_j<LB$, utilize KNN on geographical coordinates ($X,Y$ in this case) to classify point $j$ to the class of its closet neighbours.
+\item[Step 3.] For the remaining data points $j$, where $LB<p_j<LB$, utilize KNN on geographical coordinates ($X,Y$ in this case) to classify point $j$ to the class of its closet neighbors.
 \end{description}
 
 This methods would avoid false classification of data points within a cluster of same-class data and therefore increase the overall accuracy. However, it does not provide any performance improvements over datapoints on the cluster boundary.
