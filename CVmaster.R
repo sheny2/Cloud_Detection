@@ -20,7 +20,9 @@ CVmaster <-
         data = dat_CV_train,
         family = 'binomial')
         prob = predict(glm_result[[i]], dat_CV_test, type = "response")
-        prediction[[i]] = ifelse(prob > 0.5, 1,-1)
+        probt = predict(glm_result[[i]], dat_CV_train, type = "response")
+        t = pROC::coords(pROC::roc(dat_CV_train$Cloud, probtt), "best", transpose = FALSE)
+        prediction[[i]] = ifelse(prob > t[[1]], 1,-1)
       }
       
     }
@@ -93,29 +95,35 @@ CVmaster <-
     {
       # prediction <- list()
       prediction.list <- list()
-      Eta=c(0.1,0.05,0.01)
-      depth = c(2,4,6)
-      Accuracy = matrix(NA,length(Eta)*length(depth),K+1)
-      for (k in seq_along(Eta)){
-        for (j in seq_along(depth)){
-          prediction.list[[(k-1)*length(depth)+j]]=list()
-          for (i in 1:K) {
-            dat_CV_train = dat %>% filter(fold_index != i)
-            dat_CV_test = dat %>% filter(fold_index == i)
-            boosting_model <- xgboost(
-              data = as.matrix(dat_CV_train[, 1:ncol(train_feature)]),
-              label = as.matrix(dat_CV_train$Cloud01),
-              max.depth = depth[j],
-              eta = Eta[k],
-              nthread = parallel::detectCores(),
-              nrounds = 1000,
-              objective = "binary:logistic",
-              verbose = 0
-            )
-            pred <- predict(boosting_model, as.matrix(dat_CV_test[,1:ncol(train_feature)]))
-            prediction.list[[(k-1)*length(depth)+j]][[i]] <- as.numeric(pred > 0.5)
-            print((k-1)*length(depth)+j)
-            Accuracy[(k-1)*length(depth)+j, i] = mean(prediction.list[[(k-1)*length(depth)+j]][[i]] == dat_CV_test$Cloud01)
+      Eta=c(0.06,0.04,0.05)
+      depth = c(2,3,4)
+      ntree= c(1600,2000,2400,3000)
+      Accuracy = matrix(NA,length(ntree)*length(Eta)*length(depth),K+1)
+      for (q in seq_along(ntree)){
+        for (k in seq_along(Eta)){
+          for (j in seq_along(depth)){
+            prediction.list[[(q-1)*length(Eta)*length(depth)+(k-1)*length(depth)+j]]=list()
+            for (i in 1:K) {
+              dat_CV_train = dat %>% filter(fold_index != i)
+              dat_CV_test = dat %>% filter(fold_index == i)
+              boosting_model <- xgboost(
+                data = as.matrix(dat_CV_train[, 1:ncol(train_feature)]),
+                label = as.matrix(dat_CV_train$Cloud01),
+                max.depth = depth[j],
+                eta = Eta[k],
+                nthread = parallel::detectCores(),
+                nrounds = ntree[q],
+                colsample_bytree=0.6,
+                objective = "binary:logistic",
+                verbose = 0
+              )
+              pred <- predict(boosting_model, as.matrix(dat_CV_test[,1:ncol(train_feature)]))
+              predt = predict(boosting_model, as.matrix(dat_CV_train[,1:ncol(train_feature)]))
+              t = pROC::coords(pROC::roc(dat_CV_train$Cloud01, predt), "best", transpose = FALSE)
+              prediction.list[[(q-1)*length(Eta)*length(depth)+(k-1)*length(depth)+j]][[i]] <- as.numeric(pred > t[[1]])
+              print((q-1)*length(Eta)*length(depth)+(k-1)*length(depth)+j)
+              Accuracy[(q-1)*length(Eta)*length(depth)+(k-1)*length(depth)+j, i] = mean(prediction.list[[(q-1)*length(Eta)*length(depth)+(k-1)*length(depth)+j]][[i]] == dat_CV_test$Cloud01)
+            }
           }
         }
       }
@@ -128,20 +136,45 @@ CVmaster <-
     if (loss_fun == "Accuracy")
     {
       Accuracy <- matrix(NA, ncol = K + 1, nrow = 1)
-      for (j in 1:K)
-      {
-        dat_CV_test = dat %>% filter(fold_index == j)
-        Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$Cloud01)
-      }
+      if (classifier == "Boosting Tree"){
+        for (j in 1:K)
+        {
+          dat_CV_test = dat %>% filter(fold_index == j)
+          Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$Cloud01)
+        }
       Accuracy[1, K + 1] = mean(Accuracy[1, 1:K])
-    }
-    
-    
-    colnames(Accuracy) = c(paste("fold ", 1:K, sep = ""), "CV Average")
-    
-    if (classifier == "Boosting Tree"){
+      colnames(Accuracy) = c(paste("fold ", 1:K, sep = ""), "CV Average")
       return(list(Accuracy,best_index))
+      }
+      else{
+        for (j in 1:K)
+        {
+          dat_CV_test = dat %>% filter(fold_index == j)
+          Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$Cloud)
+        }
+        Accuracy[1, K + 1] = mean(Accuracy[1, 1:K])
+      }
+      colnames(Accuracy) = c(paste("fold ", 1:K, sep = ""), "CV Average")
+      return(Accuracy)
     }
     
-    return(Accuracy)
+    
+    elif(loss_fun == "F1 Score"){
+      F1=rep(NA,K+1)
+      if (classifier=="Boosting Tree"){
+        for (j in 1:K){
+          dat_CV_test = dat %>% filter(fold_index == j)
+          F1[j]=F1_Score(prediction,dat_CV_test$Cloud01)
+        }
+        F1[K+1]=mean(F1[1:K])
+      }
+      else{
+        for (j in 1:K){
+          dat_CV_test = dat %>% filter(fold_index == j)
+          F1[j]=F1_Score(prediction,dat_CV_test$Cloud)
+        }
+        F1[K+1]=mean(F1[1:K])
+      }
+      return(F1)
+    }
   }
