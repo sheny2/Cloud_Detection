@@ -43,6 +43,9 @@ colnames(image_1) = colnames(image_2) = colnames(image_3) <- var_name
 image_1$Cloud <- factor(image_1$Cloud)
 image_2$Cloud <- factor(image_2$Cloud)
 image_3$Cloud <- factor(image_3$Cloud)
+image_1$logSD <- log(image_1$SD)
+image_2$logSD <- log(image_2$SD)
+image_3$logSD <- log(image_3$SD)
 Image_1 <- image_1 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_2 <- image_2 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
@@ -826,7 +829,7 @@ knitr::kable(conf.mat$table,
 ```
 
 
-```{r importance plot, fig.cap="\\label{fig:importance_plot}The feature importance plot in boosting trees.", out.width="100%", fig.height=3,fig.width=9}
+```{r importance plot, fig.cap="\\label{fig:importance_plot}The feature importance plot in boosting trees.", fig.height=3,fig.width=9}
 par(mfrow = c(1, 2)) 
 
 # final_boost_Cut <- xgboost(
@@ -909,6 +912,51 @@ This methods would avoid false classification of data points within a cluster of
 
 [what if the data is splitted independently?]
 
+```{r, eval = F}
+set.seed(8848)
+
+Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
+levels(Image_all_KM$Cloud01) <- c("0", "1")
+train_index <- sample(nrow(Image_all_KM), size = 160000)
+ind_train <- Image_all_KM[train_index, ]
+ind_test <- Image_all_KM[-train_index, ]
+
+ind_boost <- xgboost(
+  data = as.matrix(ind_train[, 4:11]),
+  label = as.matrix(ind_train$Cloud01),
+  max.depth = 4,
+  eta = 0.05,
+  nrounds = 5000,
+  verbose = F, nthread = parallel::detectCores(),
+  objective = "binary:logistic",
+  colsample_bytree = 0.6,
+)
+
+
+pred <- predict(ind_boost, as.matrix(ind_train[, 4:11]))
+t <- invisible(pROC::coords(roc(ind_train$Cloud01, pred), "best", transpose = FALSE))
+
+
+ind_train$train_prediction <- as.factor(as.numeric(pred > t[[1]]))
+confusionMatrix(ind_train$train_prediction, ind_train$Cloud01)
+
+
+test_pred <- predict(ind_boost, as.matrix(ind_test[, 4:11]))
+ind_test$test_prediction <- as.factor(as.numeric(test_pred > t[[1]]))
+
+confusionMatrix(ind_test$test_prediction, ind_test$Cloud01)
+
+# 
+# conf.mat <- confusionMatrix(ind_test$test_prediction, ind_test$Cloud01)
+
+# knitr::kable(conf.mat$table,
+#     caption = "Confusion Matrix", col.names = c("True Non-Cloud","True Cloud"),
+#     booktabs = T ) %>%
+#   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
+
+```
+
+
 
 \subsection{Conclusion}
 
@@ -918,15 +966,82 @@ This methods would avoid false classification of data points within a cluster of
 Overall, there are various methods that we can try to employ on the cloud classification problem. Of the methods discussed in this report, boosting trees yield the best performance on the training and test data. 
 
 
-\section{Reproducibility}
+\section{Graphic Appendix}
 
-In addition to a writeup of the above results, please submit a zip file containing everything necessary to reproduce your writeup to Gradescope “PROJ2 code”. Specifically, imagine that at some point an error is discovered in the three image files, and a future researcher wants to check whether your results hold up with the new, corrected image files. This researcher should be able to easily re-run all your code and produce all your figures and tables. This zip file should contain:
+```{r image 1 covariate map, fig.cap="\\label{fig:image_1} Important Features of Image 1.", fig.width=12,fig.height=3}
+
+NDAI_plot <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
+
+SD_plot <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = logSD), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate")
+
+CORR_plot <- image_1 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
+  theme_map() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate") 
 
 
-(i) the raw Latex, Rnw, Qmd or Word used to generate your report,
+grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
+             SD_plot + ggeasy::easy_center_title(),
+             CORR_plot + ggeasy::easy_center_title(),
+             nrow = 1)
+```
 
-(ii) your R code (with CVmaster function in a separate R file),
 
-(iii) a README.md file describing, in detail, how to reproduce your paper from scratch (assume researcher has access to the images).
+```{r image 2 covariate map, fig.cap="\\label{fig:image_2} Important Features of Image 2.", fig.width=12,fig.height=3}
+NDAI_plot <- image_2 %>% 
+  # filter (NDAI >= 1.2 )%>% filter (NDAI <= 2.5 )%>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+SD_plot <- image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = logSD), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+CORR_plot <- image_2 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
+             SD_plot + ggeasy::easy_center_title(),
+             CORR_plot + ggeasy::easy_center_title(),
+             nrow = 1)
+```
+
+
+```{r image 3 covariate map, fig.cap="\\label{fig:image_3} Important Features of Image 3.", fig.width=12,fig.height=3}
+NDAI_plot <- image_3%>% 
+  # filter (NDAI >= 1.2 )%>% filter (NDAI <= 2.5 )%>% 
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+SD_plot <- image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = logSD), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
+
+CORR_plot <- image_3 %>%
+  ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate")
+
+grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
+             SD_plot + ggeasy::easy_center_title(),
+             CORR_plot + ggeasy::easy_center_title(),
+             nrow = 1)
+```
+
+
+<!-- \section{Reproducibility} -->
+
+<!-- In addition to a writeup of the above results, please submit a zip file containing everything necessary to reproduce your writeup to Gradescope “PROJ2 code”. Specifically, imagine that at some point an error is discovered in the three image files, and a future researcher wants to check whether your results hold up with the new, corrected image files. This researcher should be able to easily re-run all your code and produce all your figures and tables. This zip file should contain: -->
+
+
+<!-- (i) the raw Latex, Rnw, Qmd or Word used to generate your report, -->
+
+<!-- (ii) your R code (with CVmaster function in a separate R file), -->
+
+<!-- (iii) a README.md file describing, in detail, how to reproduce your paper from scratch (assume researcher has access to the images). -->
 
 \section{Reference}
+
