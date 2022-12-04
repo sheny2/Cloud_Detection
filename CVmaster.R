@@ -4,7 +4,7 @@ CVmaster <-
     # if classifer not in given choice
     
     fold_index = kmeans(train_coord, centers = K, nstart = 25)
-    dat = cbind(train_feature, train_label)
+    dat = cbind(train_feature, train_label = train_label)
     dat$fold_index = fold_index$cluster
     
     if (classifier == "Logistic")
@@ -21,7 +21,7 @@ CVmaster <-
         family = 'binomial')
         prob = predict(glm_result[[i]], dat_CV_test, type = "response")
         probt = predict(glm_result[[i]], dat_CV_train, type = "response")
-        t = pROC::coords(pROC::roc(dat_CV_train$Cloud, probtt), "best", transpose = FALSE)
+        t = pROC::coords(pROC::roc(dat_CV_train$train_label, probt), "best", transpose = FALSE)
         prediction[[i]] = ifelse(prob > t[[1]], 1,-1)
       }
       
@@ -150,7 +150,7 @@ CVmaster <-
         for (j in 1:K)
         {
           dat_CV_test = dat %>% filter(fold_index == j)
-          Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$Cloud)
+          Accuracy[1, j] = mean(prediction[[j]] == dat_CV_test$train_label)
         }
         Accuracy[1, K + 1] = mean(Accuracy[1, 1:K])
       }
@@ -159,7 +159,7 @@ CVmaster <-
     }
     
     
-    elif(loss_fun == "F1 Score"){
+    else if (loss_fun == "F1 Score"){
       F1=rep(NA,K+1)
       if (classifier=="Boosting Tree"){
         for (j in 1:K){
@@ -171,7 +171,7 @@ CVmaster <-
       else{
         for (j in 1:K){
           dat_CV_test = dat %>% filter(fold_index == j)
-          F1[j]=F1_Score(prediction,dat_CV_test$Cloud)
+          F1[j]=F1_Score(prediction,dat_CV_test$train_label)
         }
         F1[K+1]=mean(F1[1:K])
       }

@@ -204,7 +204,8 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
 
 
 ```{r image 2 covariate map, fig.width=12,fig.height=4}
-NDAI_plot <- image_2 %>%
+NDAI_plot <- image_2 %>% 
+  # filter (NDAI >= 1.2 )%>% filter (NDAI <= 2.5 )%>% 
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
   theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
 
@@ -224,20 +225,18 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
 
 
 ```{r image 3 covariate map, fig.width=12,fig.height=4}
-NDAI_plot <- image_3 %>%
+NDAI_plot <- image_3%>% 
+  # filter (NDAI >= 1.2 )%>% filter (NDAI <= 2.5 )%>% 
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = NDAI), size = 0.5) +
-  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
-  scale_color_gradient(low="black", high="white")
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
 
 SD_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = logSD), size = 0.5) +
-  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
-  scale_color_gradient(low="black", high="white")
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") 
 
 CORR_plot <- image_3 %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = CORR), size = 0.5) +
-  theme_map() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") + 
-  scale_color_gradient(low="black", high="white")
+  theme_map() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate")
 
 grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
              SD_plot + ggeasy::easy_center_title(),
@@ -673,9 +672,11 @@ cv_result = CVmaster(
 
 glm_test <- glm(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
         data = Image_Train_Cut,family = 'binomial')
+probt <- predict(glm_test, Image_Train_Cut, type = "response")
+t = pROC::coords(pROC::roc(Image_Train_Cut$Cloud, probt), "best", transpose = FALSE)
 
 prob <- predict(glm_test, Image_Test_Cut, type = "response")
-prediction <- ifelse(prob > 0.5, 1,-1)
+prediction <- ifelse(prob > t[[1]], 1,-1)
 test_accuracy <- mean(prediction == Image_Test_Cut$Cloud)
 
 result_logit_Cut <- cbind(classifier = "Logistic", data = "Horizontal Cut", cv_result, `Test Accuracy` = test_accuracy)
@@ -692,10 +693,11 @@ cv_result <- CVmaster(
 
 glm_test <- glm(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
         data = Image_Train_KM,family = 'binomial')
+probt <- predict(glm_test, Image_Train_KM, type = "response")
+t = pROC::coords(pROC::roc(Image_Train_KM$Cloud, probt), "best", transpose = FALSE)
 
 prob <- predict(glm_test, Image_Test_KM, type = "response")
-prediction <- ifelse(prob > 0.5, 1,-1)
-test_accuracy <- mean(prediction == Image_Test_KM$Cloud)
+prediction <- ifelse(prob > t[[1]], 1,-1)
 
 result_logit_KM <- cbind(classifier = "Logistic", data = "K-means", cv_result, `Test Accuracy` = test_accuracy) 
 
@@ -1320,8 +1322,9 @@ gbm_train_plot(d=2)
 all_result <- rbind(result_logit_Cut, result_logit_KM,
       result_lda_Cut, result_lda_KM,
       result_qda_Cut, result_qda_KM,
-      result_NB_Cut, result_NB_KM,
-      result_BT_Cut, result_BT_KM)  %>% 
+      result_NB_Cut, result_NB_KM
+      # ,result_BT_Cut, result_BT_KM
+      )  %>% 
   as_tibble() %>% 
   mutate_at(c("fold 1","fold 2","fold 3","fold 4","fold 5","fold 6","fold 7","fold 8","fold 9","fold 10","CV Average", "Test Accuracy"), as.numeric) %>% 
   mutate(across(where(is.numeric), ~ round(., 4)))

@@ -15,7 +15,7 @@ bibliography: cloud.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, cache = T, warning = F, message = F)
+knitr::opts_chunk$set(echo = F, cache = F, warning = F, message = F)
 library(mosaic)
 library(caret)
 library(gridExtra)
@@ -468,6 +468,9 @@ levels(Image_Test_KM$Cloud01) <- c("0", "1")
 ```
 
 ```{r test ROC, fig.cap="\\label{fig:ROCs} ROC curves on the test data (the first row is horizontal cut data, the second row is K-means splitted data)", message = F, fig.height=5,fig.width=15}
+load("final_boost_All.RData")
+load("final_boost_KM.RData")
+
 par(mfrow = c(2, 5)) 
 # ROC for GLM cut
 glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut, 
@@ -496,20 +499,20 @@ NBpreds <- as.numeric(predict(NB_result, Image_Test_Cut))
 invisible(roc(Image_Test_Cut$Cloud, NBpreds, print.auc = T, plot = T, main = "Naive Bayes"))
 
 # ROC for Boosting Trees
-boost_model <- invisible(xgboost(
-  data = as.matrix(Image_Train_Cut[, 4:11]),
-  label = as.matrix(Image_Train_Cut$Cloud01),
-  max.depth = 4,
-  eta = 0.01,
-  nthread = parallel::detectCores(),
-  nrounds = 3,
-  objective = "binary:logistic",
-  verbose=0
-))
+# boost_model_Cut <- invisible(xgboost(
+#   data = as.matrix(Image_Train_Cut[, 4:11]),
+#   label = as.matrix(Image_Train_Cut$Cloud01),
+#   max.depth = 4,
+#   eta = 0.05,
+#   nthread = parallel::detectCores(),
+#   nrounds = 3000,
+#   objective = "binary:logistic",
+#   verbose=0
+# ))
 
-pred <- predict(boost_model, as.matrix(Image_Train_Cut[, 4:11]))
+pred <- predict(final_boost_All, as.matrix(Image_Train_Cut[, 4:11]))
 t = pROC::coords(roc(Image_Train_Cut$Cloud01, pred), "best", transpose = FALSE)
-pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+pred <- predict(final_boost_All, as.matrix(Image_Test_Cut[, 4:11]))
 invisible(roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]], main = "Boosting Trees"))
 
 
@@ -541,20 +544,20 @@ NBpreds <- as.numeric(predict(NB_result, Image_Test_KM))
 invisible(roc(Image_Test_KM$Cloud, NBpreds, print.auc = T, plot = T, main = "Naive Bayes"))
 
 # ROC for Boosting Trees
-boost_model <- invisible(xgboost(
-  data = as.matrix(Image_Train_KM[, 4:11]),
-  label = as.matrix(Image_Train_KM$Cloud01),
-  max.depth = 4,
-  eta = 0.01,
-  nthread = parallel::detectCores(),
-  nrounds = 3,
-  objective = "binary:logistic",
-  verbose=0
-))
+# boost_model_KM <- invisible(xgboost(
+#   data = as.matrix(Image_Train_KM[, 4:11]),
+#   label = as.matrix(Image_Train_KM$Cloud01),
+#   max.depth = 4,
+#   eta = 0.05,
+#   nthread = parallel::detectCores(),
+#   nrounds = 3000,
+#   objective = "binary:logistic",
+#   verbose=0
+# ))
 
-pred <- predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
+pred <- predict(final_boost_KM, as.matrix(Image_Train_KM[, 4:11]))
 t = pROC::coords(roc(Image_Train_KM$Cloud01, pred), "best", transpose = FALSE)
-pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
+pred <- predict(final_boost_KM, as.matrix(Image_Test_KM[, 4:11]))
 invisible(roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]], main = "Boosting Trees"))
 ```
 
@@ -572,31 +575,157 @@ invisible(roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres 
 (a) Do an in-depth analysis of a good classification model of your choice by showing some diagnostic plots or information related to convergence or parameter estimation.
 
 ```{r,message=F,warning=F,cache=T, eval=F}
-test_accuracy=rep(NA,20)
-train_accuracy=rep(NA,20)
-n = seq(1,1001,50)
-for (i in seq_along(n)){
+set.seed(4577)
+n = seq(1, 6001, 2000)
+train_accuracy_Cut = rep(NA, length(n))
+test_accuracy_Cut = rep(NA, length(n))
+
+for (i in seq_along(n)) {
   boost_model <- xgboost(
-  data = as.matrix(Image_Train_Cut[, 4:11]),
-  label = as.matrix(Image_Train_Cut$Cloud01),
-  max.depth = 4,
-  eta = 0.01,
-  nthread = parallel::detectCores(),
-  nrounds = n[i],
-  objective = "binary:logistic",
-  verbose=0
-)
-train_pred = predict(boost_model,as.matrix(Image_Train_Cut[, 4:11]))
-t = pROC::coords(roc(Image_Train_Cut$Cloud01, train_pred), "best", transpose = FALSE)
-train_label = ifelse(train_pred>t[[1]],-1,1)
-train_accuracy[i]=mean(train_label==Image_Train_Cut$Cloud01)
-test_pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
-t = pROC::coords(roc(Image_Test_Cut$Cloud01, test_pred), "best", transpose = FALSE)
-test_label = ifelse(test_pred>t[[1]],-1,1)
-test_accuracy[i]=mean(test_label==Image_Test_Cut$Cloud01)
+    data = as.matrix(Image_Train_Cut[, 4:11]),
+    label = as.matrix(Image_Train_Cut$Cloud01),
+    max.depth = 2,
+    eta = 0.06,
+    nthread = parallel::detectCores(),
+    nrounds = n[i],
+    objective = "binary:logistic",
+    colsample_bytree = 0.6,
+    verbose = 0
+  )
+  train_pred = predict(boost_model, as.matrix(Image_Train_Cut[, 4:11]))
+  t = pROC::coords(roc(Image_Train_Cut$Cloud01, train_pred),
+                   "best",
+                   transpose = FALSE)
+  train_label = ifelse(train_pred > t[[1]], 1, 0)
+  train_accuracy_Cut[i] = mean(train_label == Image_Train_Cut$Cloud01)
+  test_pred <- predict(boost_model, as.matrix(Image_Test_Cut[, 4:11]))
+  test_label = ifelse(test_pred > t[[1]], 1, 0)
+  test_accuracy_Cut[i] = mean(test_label == Image_Test_Cut$Cloud01)
+  print(i)
 }
+
+plot(n, 1 - train_accuracy_Cut, type = "o")
+plot(n, 1 - test_accuracy_Cut, type = "o")
+
+
+save(train_accuracy_Cut, file = "train_accuracy_Cut.RData")
+save(test_accuracy_Cut, file = "test_accuracy_Cut.RData")
 ```
 
+```{r,message=F,warning=F,cache=T, eval=F}
+set.seed(123456)
+n = seq(1, 5001, 200)
+test_accuracy_KM = rep(NA, length(n))
+train_accuracy_KM = rep(NA, length(n))
+
+for (i in seq_along(n)) {
+  boost_model <- xgboost(
+    data = as.matrix(Image_Train_KM[, 4:11]),
+    label = as.matrix(Image_Train_KM$Cloud01),
+    max.depth = 2,
+    eta = 0.06,
+    nthread = parallel::detectCores(),
+    nrounds = n[i],
+    objective = "binary:logistic",
+    colsample_bytree = 0.6,
+    verbose = 0
+  )
+  train_pred = predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
+  t = pROC::coords(roc(Image_Train_KM$Cloud01, train_pred),
+                   "best",
+                   transpose = FALSE)
+  train_label = ifelse(train_pred > t[[1]], 1, 0)
+  train_accuracy_KM[i] = mean(train_label == Image_Train_KM$Cloud01)
+  test_pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
+  test_label = ifelse(test_pred > t[[1]], 1, 0)
+  test_accuracy_KM[i] = mean(test_label == Image_Test_KM$Cloud01)
+  print(i)
+}
+
+plot(n, 1 - train_accuracy_KM, type = "o")
+plot(n, 1 - test_accuracy_KM, type = "o")
+
+save(train_accuracy_KM, file = "train_accuracy_KM2.RData")
+save(test_accuracy_KM, file = "test_accuracy_KM2.RData")
+
+
+load("train_accuracy_KM2.RData")
+load("test_accuracy_KM2.RData")
+
+plot(seq(1, 5001, 200), 1 - train_accuracy_KM, type = "l")
+plot(seq(1, 5001, 200), 1 - test_accuracy_KM, type = "l")
+```
+
+```{r, eval = F}
+set.seed(123456)
+n = seq(1001, 3001, 100)
+test_accuracy_KM = rep(NA, length(n))
+train_accuracy_KM = rep(NA, length(n))
+
+for (i in seq_along(n)) {
+  boost_model <- xgboost(
+    data = as.matrix(Image_Train_KM[, 4:11]),
+    label = as.matrix(Image_Train_KM$Cloud01),
+    max.depth = 2,
+    eta = 0.06,
+    nthread = parallel::detectCores(),
+    nrounds = n[i],
+    objective = "binary:logistic",
+    colsample_bytree = 0.6,
+    verbose = 0
+  )
+  train_pred = predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
+  t = pROC::coords(roc(Image_Train_KM$Cloud01, train_pred),
+                   "best",
+                   transpose = FALSE)
+  train_label = ifelse(train_pred > t[[1]], 1, 0)
+  train_accuracy_KM[i] = mean(train_label == Image_Train_KM$Cloud01)
+  test_pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
+  test_label = ifelse(test_pred > t[[1]], 1, 0)
+  test_accuracy_KM[i] = mean(test_label == Image_Test_KM$Cloud01)
+  print(i)
+}
+
+plot(n, 1 - train_accuracy_KM, type = "o")
+plot(n, 1 - test_accuracy_KM, type = "o")
+```
+
+```{r, eval = F}
+set.seed(8848)
+boost_modelKM <- xgboost(
+  data = as.matrix(Image_Train_KM[, 4:11]),
+  label = as.matrix(Image_Train_KM$Cloud01),
+  max.depth = 2,
+  eta = 0.06,
+  nthread = 4,
+  nrounds = 2000,
+  objective = "binary:logistic",
+  colsample_bytree=0.6,
+  verbose=0
+)
+
+train_pred = predict(boost_modelKM, as.matrix(Image_Train_KM[, 4:11]))
+t = pROC::coords(roc(Image_Train_KM$Cloud01, train_pred),
+                 "best",
+                 transpose = FALSE)
+train_label = ifelse(train_pred > t[[1]], 1, 0)
+mean(train_label == Image_Train_KM$Cloud01)
+
+
+test_pred <- predict(boost_modelKM, as.matrix(Image_Test_KM[, 4:11]))
+test_label = ifelse(test_pred > t[[1]], 1, 0)
+mean(test_label == Image_Test_KM$Cloud01)
+```
+
+
+```{r converge plot, fig.cap="\\label{fig:converge_plot} Missclassfication errros v.s. number of iterations", fig.width = 12, fig.height = 4, out.width="85%"}
+par(mfrow = c(1, 2))
+load("train_accuracy_KM.RData")
+load("test_accuracy_KM.RData")
+
+plot(seq(1, 10001, 1000), 1 - train_accuracy_KM, type = "l", ylab = "Train MisClassification Error", xlab = "Number of Iterations")
+plot(seq(1, 10001, 1000), 1 - test_accuracy_KM, type = "l", ylab = "Test MisClassification Error", xlab = "Number of Iterations")
+```
 
 \subsection{Patterns of Missclassification}
 
@@ -604,39 +733,40 @@ test_accuracy[i]=mean(test_label==Image_Test_Cut$Cloud01)
 
 ```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees, with missclassified points highlighted as red.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
 # prediction plot
-boost_model <- xgboost(
-  data = as.matrix(Image_Train_KM[, 4:11]),
-  label = as.matrix(Image_Train_KM$Cloud01),
-  max.depth = 4,
-  eta = 0.05,
-  nrounds = 1000,
-  verbose = F, nthread = parallel::detectCores(),
-  objective = "binary:logistic",
-)
-
-cv=xgb.cv(
-  params = list(eta=c(0.1,0.05,0.03),max_depth=c(2,3,4)),
-  data = as.matrix(Image_Train_KM[, 4:11]),
-  label = as.matrix(Image_Train_KM$Cloud01),
-  nrounds=1000,
-  5,
-  missing = NA,
-  prediction = FALSE,
-  showsd = TRUE,
-  obj = NULL,
-  feval = NULL,
-  stratified = TRUE,
-  folds = NULL,
-)
-
-pred <- predict(boost_model, as.matrix(Image_Train_KM[, 4:11]))
-t <- invisible(pROC::coords(roc(Image_Train_KM$Cloud01, pred), "best", transpose = FALSE))
-
-all_pred <- predict(boost_model, as.matrix(Image_all_KM[, 4:11]))
-Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > t[[1]]))
-
 Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
 levels(Image_all_KM$Cloud01) <- c("0", "1")
+
+# final_boost_All <- xgboost(
+#   data = as.matrix(Image_Train_Cut[, 4:11]),
+#   label = as.matrix(Image_Train_Cut$Cloud01),
+#   max.depth = 4,
+#   eta = 0.05,
+#   nrounds = 3000,
+#   verbose = F, nthread = parallel::detectCores(),
+#   objective = "binary:logistic",
+#   colsample_bytree = 0.6,
+# )
+
+# cv=xgb.cv(
+#   params = list(eta=c(0.1,0.05,0.03),max_depth=c(2,3,4)),
+#   data = as.matrix(Image_Train_KM[, 4:11]),
+#   label = as.matrix(Image_Train_KM$Cloud01),
+#   nrounds=1000,
+#   5,
+#   missing = NA,
+#   prediction = FALSE,
+#   showsd = TRUE,
+#   obj = NULL,
+#   feval = NULL,
+#   stratified = TRUE,
+#   folds = NULL,
+# )
+
+pred <- predict(final_boost_All, as.matrix(Image_Train_Cut[, 4:11]))
+t <- invisible(pROC::coords(roc(Image_Train_Cut$Cloud01, pred), "best", transpose = FALSE))
+
+all_pred <- predict(final_boost_All, as.matrix(Image_all_KM[, 4:11]))
+Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > t[[1]]))
 
 
 # draw plots
@@ -649,24 +779,32 @@ Palette_2 <- c("gray", "white")
 map1 <- Image_all_KM %>%
   filter(image == "1") %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
-  geom_point(data=filter(Image_all_KM %>% filter(image == "1"),Cloud01!=all_prediction),aes(x = X_coord, y = Y_coord), color="red",size = 0.3, alpha = 0.3) +
+  geom_point(data=filter(Image_all_KM %>% filter(image == "1"), Cloud01!=all_prediction),
+             aes(x = X_coord, y = Y_coord), color="red",size = 0.1, alpha = 0.3) +
   theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate", color = "Prediction") +
   scale_colour_manual(values = Palette_2)
-mean(Image_all_KM %>% filter(image == "1")%>%dplyr::select(Cloud01)==Image_all_KM %>% filter(image == "1")%>%dplyr::select(all_prediction))
+
+# mean(Image_all_KM %>% filter(image == "1")%>%dplyr::select(Cloud01)==Image_all_KM %>% filter(image == "1")%>%dplyr::select(all_prediction))
 
 map2 <- Image_all_KM %>%
   filter(image == "2") %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
-  geom_point(data=filter(Image_all_KM %>% filter(image == "2"),Cloud01!=all_prediction),aes(x = X_coord, y = Y_coord), color="red",size = 0.3, alpha = 0.3) +
+  geom_point(data=filter(Image_all_KM %>% filter(image == "2"), Cloud01!=all_prediction),
+             aes(x = X_coord, y = Y_coord), color="red",size = 0.1, alpha = 0.3) +
   theme_dark() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_2)
+
+# mean(Image_all_KM %>% filter(image == "2")%>%dplyr::select(Cloud01)==Image_all_KM %>% filter(image == "2")%>%dplyr::select(all_prediction))
 
 map3 <- Image_all_KM %>%
   filter(image == "3") %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
-  geom_point(data=filter(Image_all_KM %>% filter(image == "3"),Cloud01!=all_prediction),aes(x = X_coord, y = Y_coord), color="red",size = 0.3, alpha = 0.3) +
+  geom_point(data=filter(Image_all_KM %>% filter(image == "3"), Cloud01!=all_prediction),
+             aes(x = X_coord, y = Y_coord), color="red",size = 0.1, alpha = 0.3) +
   theme_dark() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_2)
+
+# mean(Image_all_KM %>% filter(image == "3")%>%dplyr::select(Cloud01)==Image_all_KM %>% filter(image == "3")%>%dplyr::select(all_prediction))
 
 map_legend <- lemon::g_legend(map1 +  guides(colour = guide_legend(nrow = 1)))
 
@@ -678,32 +816,43 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
 ```
 
 
+```{r}
+conf.mat <- confusionMatrix(Image_all_KM$all_prediction, Image_all_KM$Cloud01)
+
+knitr::kable(conf.mat$table,
+    caption = "Confusion Matrix", col.names = c("True Non-Cloud","True Cloud"),
+    booktabs = T ) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
+```
+
+
 ```{r importance plot, fig.cap="\\label{fig:importance_plot}The feature importance plot in boosting trees.", out.width="100%", fig.height=3,fig.width=9}
 par(mfrow = c(1, 2)) 
-# xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model)
-boost_model <- invisible(xgboost(
-  data = as.matrix(Image_Train_Cut[, 4:11]),
-  label = as.matrix(Image_Train_Cut$Cloud01),
-  max.depth = 4,
-  eta = 0.01,
-  nthread = parallel::detectCores(),
-  nrounds = 3,
-  objective = "binary:logistic",
-  verbose=0
-))
-xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_Cut[, 4:11])), model = boost_model), main = "Boosting trees on horizontal cut data", cex.main = 0.5, cex.lab = 0.5, cex.axis = 0.5)
 
-boost_model <- invisible(xgboost(
-  data = as.matrix(Image_Train_KM[, 4:11]),
-  label = as.matrix(Image_Train_KM$Cloud01),
-  max.depth = 4,
-  eta = 0.01,
-  nthread = parallel::detectCores(),
-  nrounds = 3,
-  objective = "binary:logistic",
-  verbose=0
-))
-xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = boost_model), main = "Boosting trees on K-means data", cex.main = 0.5, cex.lab = 0.5, cex.axis = 0.5)
+# final_boost_Cut <- xgboost(
+#   data = as.matrix(Image_Train_Cut[, 4:11]),
+#   label = as.matrix(Image_Train_Cut$Cloud01),
+#   max.depth = 2,
+#   eta = 0.06,
+#   nrounds = 2000,
+#   verbose = F, nthread = parallel::detectCores(),
+#   objective = "binary:logistic",
+#   colsample_bytree=0.6,
+# )
+xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_Cut[, 4:11])), model = final_boost_All), main = "Boosting trees on horizontal cut data", cex.main = 0.5, cex.lab = 0.5, cex.axis = 0.5)
+
+# final_boost_KM <- xgboost(
+#   data = as.matrix(Image_Train_KM[, 4:11]),
+#   label = as.matrix(Image_Train_KM$Cloud01),
+#   max.depth = 2,
+#   eta = 0.06,
+#   nrounds = 3000,
+#   verbose = F, nthread = parallel::detectCores(),
+#   objective = "binary:logistic",
+#   colsample_bytree=0.6,
+# )
+
+xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = final_boost_KM), main = "Boosting trees on K-means data", cex.main = 0.5, cex.lab = 0.5, cex.axis = 0.5)
 ```
 
 
@@ -717,7 +866,7 @@ C2 <- Image_all_KM %>% mutate(Correctness = ifelse(all_prediction == Cloud01, "C
   geom_density(aes(fill = Correctness, color = Correctness), alpha = 0.7)
 
 C3 <- Image_all_KM %>% mutate(Correctness = ifelse(all_prediction == Cloud01, "Correct Prediction", "Wrong Prediction")) %>% 
-  ggplot(aes(x = AN )) +
+  ggplot(aes(x = logSD )) +
   geom_density(aes(fill = Correctness, color = Correctness), alpha = 0.7)
 
 C_legend <- lemon::g_legend(C1 +  guides(colour = guide_legend(nrow = 1)))
@@ -726,7 +875,14 @@ grid.arrange(arrangeGrob(C1 + ggeasy::easy_center_title() + theme(legend.positio
                          C2 + ggeasy::easy_center_title() + theme(legend.position="none"),
                          C3 + ggeasy::easy_center_title() + theme(legend.position="none"),
                          nrow = 1),
-             C_legend, nrow = 2, heights = c(10, 1))
+             C_legend, nrow = 2, heights = c(10, 3))
+
+
+ # Image_all_KM %>% mutate(Correctness = ifelse(all_prediction == Cloud01, "Correct Prediction", "Wrong Prediction")) %>% 
+ #   filter(Correctness =="Wrong Prediction" ) %>% 
+ #  ggplot(aes(x = NDAI )) +
+ #  geom_density(aes(fill = Cloud01, color = Cloud01), alpha = 0.7) 
+
 ```
 
 
