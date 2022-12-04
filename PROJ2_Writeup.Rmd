@@ -1,5 +1,5 @@
 ---
-title: "STA 521 Project 2 Cloud Data Report"
+title: "See from Sky: Examining Cloud Detection Algorithms on MISR Data"
 author: "Yicheng Shen (yicheng.shen@duke.edu) & Yunhong Bao (yunhong.bao@duke.edu)"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
@@ -734,7 +734,7 @@ plot(seq(1, 10001, 1000), 1 - test_accuracy_KM, type = "l", ylab = "Test MisClas
 
 (b) For your best classification model(s), do you notice any patterns in the misclassification errors? Again, use quantitative and visual methods of analysis. Do you notice problems in particular regions, or in specific ranges of feature values?
 
-```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees, with missclassified points highlighted as red.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
+```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees, with missclassified points highlighted as yellow color.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
 # prediction plot
 Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
 levels(Image_all_KM$Cloud01) <- c("0", "1")
@@ -783,7 +783,7 @@ map1 <- Image_all_KM %>%
   filter(image == "1") %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
   geom_point(data=filter(Image_all_KM %>% filter(image == "1"), Cloud01!=all_prediction),
-             aes(x = X_coord, y = Y_coord), color="red",size = 0.1, alpha = 0.3) +
+             aes(x = X_coord, y = Y_coord), color="yellow",size = 0.1, alpha = 0.3) +
   theme_dark() + labs(title = "Image 1", x = "X Coordinate", y = "Y Coordinate", color = "Prediction") +
   scale_colour_manual(values = Palette_2)
 
@@ -793,7 +793,7 @@ map2 <- Image_all_KM %>%
   filter(image == "2") %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
   geom_point(data=filter(Image_all_KM %>% filter(image == "2"), Cloud01!=all_prediction),
-             aes(x = X_coord, y = Y_coord), color="red",size = 0.1, alpha = 0.3) +
+             aes(x = X_coord, y = Y_coord), color="yellow",size = 0.1, alpha = 0.3) +
   theme_dark() + labs(title = "Image 2", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_2)
 
@@ -803,7 +803,7 @@ map3 <- Image_all_KM %>%
   filter(image == "3") %>%
   ggplot() + geom_point(aes(x = X_coord, y = Y_coord, color = all_prediction), size = 0.5) +
   geom_point(data=filter(Image_all_KM %>% filter(image == "3"), Cloud01!=all_prediction),
-             aes(x = X_coord, y = Y_coord), color="red",size = 0.1, alpha = 0.3) +
+             aes(x = X_coord, y = Y_coord), color="yellow",size = 0.1, alpha = 0.3) +
   theme_dark() + labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_2)
 
