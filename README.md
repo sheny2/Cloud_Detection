@@ -1,4 +1,4 @@
-# STA 521: Project 2
+# See from Sky: Examining Cloud Detection Algorithms on MISR Data
 
 This project is a case study of constructing cloud detection algorithms employed on satellite images. 
 
