@@ -436,9 +436,9 @@ Before fitting the chosen classification algorithms, we first assess different m
 
 After assessment of model assumption fitness, different classifications methods are applied to the data set. For Boosting Tree algorithm, hyperparameters including max-depth of each weak learner, number of weak learners, and the  learning rate are tuned through K-fold validation. For algorithms that returns the classification probability, we determine the model threshold by consulting the Youden statistics which maximized the sum of specificity and sensitivity. Both CV and test accuracies are displayed in the following table:
 ```{r}
-all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% 
-  dplyr::select(-CV.Average, -Test.Accuracy)
-
+# all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% 
+#   dplyr::select(-CV.Average, -Test.Accuracy)
+all_result <- read.csv("all_result.csv")
 knitr::kable(all_result,
     caption = "10-fold CV Results and Test Accuracy based on Two ways of Data Splitting",
     booktabs = T ) %>%
