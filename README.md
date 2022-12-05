@@ -9,7 +9,7 @@ For any future users who want to reproduce our analysis or train classification 
 ## Data Splitting 
 
 Considering the non-independent nature of the image pixels, users should be careful when splitting the data for training and testing purposes. 
-There are two non-trivial ways of data splitting used in this project. 
+There are two non-trivial ways of data splitting that we recommend in this project. 
 
 A. Horizontal Cut
 The first method cuts each image horizontally in order to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. Basically, each image is cut into five blocks by evenly dividing Y coordinates, and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
