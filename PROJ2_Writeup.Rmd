@@ -1045,6 +1045,19 @@ In this paper, we employed various methods on this Arctic cloud classification p
 
 In order to ensure the reproducibility and applicability of our work on future MISR data, we have published our codes and model analysis on GitHub. Users may use the following link to visit our repository: https://github.com/sheny2/STA521-Project-2. The repository contains detailed codes and a README file, which illustrates our workflows as well as guides to reproduce our analysis.
 
+\section{Acknowledgement}
+
+Words cannot express our gratitude to our professor Yuansi Chen and teaching assistants Nancy Huang, Jose Pliego San Martin for their invaluable patience and feedback. Professor Chen's advice of block sampling method and Nancy, Jose's insights in coding and modeling deeply impacted and inspired us.
+
+Collaborative in its nature, this project is a result of team work and insightful discussions. Yicheng Shen's advanced techniques in coding and ggplot enables us to provide vivid data visualiation throughout this paper. Yunhong Bao's patience in model tuning and hyperparameter selection ensures optimal model outcome and accuracy. 
+
+We also want to express our gratefulness to developers of various R packages, XGBoost especially. Their hard work provides a solid foundation for this project. 
+
+We have encountered multiple barriers. For example, we faced great difficulty installing XGBoost parallel on MacOS systems. We want to thank activists in the R coding community. It is the online resources they provided that helped us resolve various coding challenges.
+
+Finally, Yu's paper (2008) provide an insightful guidance to our project. 
+
+
 
 \section{Graphic Appendix}
 
@@ -1113,18 +1126,8 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
 ```{r tree visualization, fig.cap="\\label{fig:tree_vis} Visualization of Weak Learner", out.width="70%"}
 knitr::include_graphics("TREE.png")
 ```
+
 \section{Reference}
-\section{Acknowledgement}
-Words cannot express our gratitude to our professor Yuansi Chen and teaching assistants Nancy Huang, Jose Pliego San Martin for their invaluable patience and feedback. Professor Chen's advice of block sampling method and Nancy, Jose's insights in coding and modeling deeply impacted and inspired us.
-
-Collaborative in its nature, this project is a result of team work and insightful discussions. Yicheng Shen's advanced techniques in coding and ggplot enables us to provide vivid data visualiation throughout this paper. Yunhong Bao's patience in model tuning and hyperparameter selection ensures optimal model outcome and accuracy. 
-
-We also want to express our gratefulness to developers of various R packages, XGBoost especially. Their hard work provides a solid foundation for this project. 
-
-We have encountered multiple barriers. For example, we faced great difficulty installing XGBoost parallel on MacOS systems. We want to thank activists in the R coding community. It is the online resources they provided that helped us resolve various coding challenges.
-
-Finally, Yu's paper (2008) provide an insightful guidance to our project. 
-
 
 
 
