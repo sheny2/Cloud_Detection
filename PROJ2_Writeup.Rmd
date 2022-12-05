@@ -15,7 +15,7 @@ bibliography: cloud.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, cache = F, warning = F, message = F)
+knitr::opts_chunk$set(echo = F, cache = T, warning = F, message = F)
 library(mosaic)
 library(caret)
 library(gridExtra)
@@ -27,6 +27,7 @@ library(MASS)
 library(e1071)
 library(class)
 library(tree)
+library(MLmetrics)
 library(randomForest)
 library(gbm)
 library(xgboost)
@@ -482,25 +483,39 @@ GLMpreds <- predict(glm_result,Image_Train_Cut,type = "response")
 t = pROC::coords(roc(Image_Train_Cut$Cloud, GLMpreds), "best", transpose = FALSE)
 GLMpreds <- predict(glm_result,Image_Test_Cut,type = "response")
 invisible(roc(Image_Test_Cut$Cloud, GLMpreds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression"))
+glmcutF1 = F1_Score(Image_Test_Cut$Cloud, ifelse(GLMpreds>t[[1]],1,-1))
+cm <- confusionMatrix(as.factor(ifelse(GLMpreds>t[[1]],1,-1)), reference = as.factor(Image_Test_Cut$Cloud))
+glmcutrec = cm[["byClass"]]["Precision"]
 
 # ROC for LDA cut
 lda_result <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
     data = Image_Train_Cut)
-LDApreds <- as.numeric(predict(lda_result, Image_Test_Cut)$class)
+LDApreds <- predict(lda_result, Image_Test_Cut)$class
+LDApreds = ifelse(LDApreds==1,1,-1)
 invisible(roc(Image_Test_Cut$Cloud, LDApreds, print.auc = T, plot = T, main = "LDA"))
+LDAcutF1 = F1_Score(Image_Test_Cut$Cloud, LDApreds)
+cm <- confusionMatrix(as.factor(LDApreds), reference = as.factor(Image_Test_Cut$Cloud))
+LDAcutrec = cm[["byClass"]]["Precision"]
 
 # ROC for QDA cut
 qda_result <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
     data = Image_Train_Cut)
-QDApreds <- as.numeric(predict(qda_result, Image_Test_Cut)$class)
+QDApreds <- predict(qda_result, Image_Test_Cut)$class
+QDApreds = ifelse(QDApreds==1,1,-1)
 invisible(roc(Image_Test_Cut$Cloud, QDApreds, print.auc = T, plot = T, main = "QDA"))
-
+QDAcutF1 = F1_Score(Image_Test_Cut$Cloud, QDApreds)
+cm <- confusionMatrix(as.factor(QDApreds), reference = as.factor(Image_Test_Cut$Cloud))
+QDAcutrec = cm[["byClass"]]["Precision"]
 # ROC for NB cut
+
 NB_result <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
     data = Image_Train_Cut)
-NBpreds <- as.numeric(predict(NB_result, Image_Test_Cut))
+NBpreds <- predict(NB_result, Image_Test_Cut)
+NBpreds = ifelse(NBpreds==1,1,-1)
 invisible(roc(Image_Test_Cut$Cloud, NBpreds, print.auc = T, plot = T, main = "Naive Bayes"))
-
+NBcutF1 = F1_Score(Image_Test_Cut$Cloud, NBpreds)
+cm <- confusionMatrix(as.factor(NBpreds), reference = as.factor(Image_Test_Cut$Cloud))
+NBcutrec = cm[["byClass"]]["Precision"]
 # ROC for Boosting Trees
 # boost_model_Cut <- invisible(xgboost(
 #   data = as.matrix(Image_Train_Cut[, 4:11]),
@@ -517,35 +532,55 @@ pred <- predict(final_boost_All, as.matrix(Image_Train_Cut[, 4:11]))
 t = pROC::coords(roc(Image_Train_Cut$Cloud01, pred), "best", transpose = FALSE)
 pred <- predict(final_boost_All, as.matrix(Image_Test_Cut[, 4:11]))
 invisible(roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]], main = "Boosting Trees"))
+xgbcutF1 = F1_Score(Image_Test_Cut$Cloud01, ifelse(pred>t[[1]],1,0))
+cm <- confusionMatrix(as.factor(ifelse(pred>t[[1]],1,0)), reference = as.factor(Image_Test_Cut$Cloud01))
+xgbcutrec = cm[["byClass"]]["Precision"]
 
-
+Cut_F1=c(glmcutF1,LDAcutF1,QDAcutF1,NBcutF1,xgbcutF1)
+Cut_pr=c(glmcutrec,LDAcutrec,QDAcutrec,NBcutrec,xgbcutrec)
+names(Cut_F1)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
+names(Cut_pr)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
 # KM
 
 glm_result = glm(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM, 
 family = 'binomial')
 preds <- predict(glm_result,Image_Train_KM, type = "response")
 t = pROC::coords(roc(Image_Train_KM$Cloud, preds), "best", transpose = FALSE)
-GLMpreds <- predict(glm_result,Image_Test_Cut,type = "response")
-invisible(roc(Image_Test_Cut$Cloud, GLMpreds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression"))
+GLMpreds <- predict(glm_result,Image_Test_KM,type = "response")
+invisible(roc(Image_Test_KM$Cloud, GLMpreds, print.auc = T, plot = T, print.thres = t[[1]], main = "Logistic Regression"))
+glmKMF1 = F1_Score(Image_Test_KM$Cloud, ifelse(GLMpreds>t[[1]],1,-1))
+cm <- confusionMatrix(as.factor(ifelse(GLMpreds>t[[1]],1,-1)), reference = as.factor(Image_Test_KM$Cloud))
+glmKMrec = cm[["byClass"]]["Precision"]
 
 # ROC for LDA cut
 lda_result <- lda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
     data = Image_Train_KM)
-LDApreds <- as.numeric(predict(lda_result, Image_Test_KM)$class)
+LDApreds <- predict(lda_result, Image_Test_KM)$class
+LDApreds = ifelse(LDApreds==1,1,-1)
 invisible(roc(Image_Test_KM$Cloud, LDApreds, print.auc = T, plot = T, main = "LDA"))
+LDAKMF1 = F1_Score(Image_Test_KM$Cloud, LDApreds)
+cm <- confusionMatrix(as.factor(LDApreds), reference = as.factor(Image_Test_KM$Cloud))
+LDAKMrec = cm[["byClass"]]["Precision"]
 
 # ROC for QDA cut
 qda_result <- qda(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
     data = Image_Train_KM)
-QDApreds <- as.numeric(predict(qda_result, Image_Test_KM)$class)
+QDApreds <- predict(qda_result, Image_Test_KM)$class
+QDApreds = ifelse(QDApreds==1,1,-1)
 invisible(roc(Image_Test_KM$Cloud, QDApreds, print.auc = T, plot = T, main = "QDA"))
+QDAKMF1 = F1_Score(Image_Test_KM$Cloud, QDApreds)
+cm <- confusionMatrix(as.factor(QDApreds), reference = as.factor(Image_Test_KM$Cloud))
+QDAKMrec = cm[["byClass"]]["Precision"]
 
 # ROC for NB cut
 NB_result <- naiveBayes(Cloud ~ NDAI + CORR + logSD + DF + CF + BF + AF + AN,
     data = Image_Train_KM)
-NBpreds <- as.numeric(predict(NB_result, Image_Test_KM))
+NBpreds <- predict(NB_result, Image_Test_KM)
+NBpreds = ifelse(NBpreds==1,1,-1)
 invisible(roc(Image_Test_KM$Cloud, NBpreds, print.auc = T, plot = T, main = "Naive Bayes"))
-
+NBKMF1 = F1_Score(Image_Test_KM$Cloud, NBpreds)
+cm <- confusionMatrix(as.factor(NBpreds), reference = as.factor(Image_Test_KM$Cloud))
+NBKMrec = cm[["byClass"]]["Precision"]
 # ROC for Boosting Trees
 # boost_model_KM <- invisible(xgboost(
 #   data = as.matrix(Image_Train_KM[, 4:11]),
@@ -562,6 +597,14 @@ pred <- predict(final_boost_KM, as.matrix(Image_Train_KM[, 4:11]))
 t = pROC::coords(roc(Image_Train_KM$Cloud01, pred), "best", transpose = FALSE)
 pred <- predict(final_boost_KM, as.matrix(Image_Test_KM[, 4:11]))
 invisible(roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres = t[[1]], main = "Boosting Trees"))
+xgbKMF1 = F1_Score(Image_Test_KM$Cloud01, ifelse(pred>t[[1]],1,0))
+cm <- confusionMatrix(as.factor(ifelse(pred>t[[1]],1,0)), reference = as.factor(Image_Test_KM$Cloud01))
+xgbKMrec = cm[["byClass"]]["Precision"]
+
+KM_F1=c(glmKMF1,LDAKMF1,QDAKMF1,NBKMF1,xgbKMF1)
+KM_pr=c(glmKMrec,LDAKMrec,QDAKMrec,NBKMrec,xgbKMrec)
+names(KM_F1)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
+names(KM_pr)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
 ```
 
 \subsection{More Model Assessments}
@@ -569,6 +612,22 @@ invisible(roc(Image_Test_KM$Cloud01, pred, print.auc = T, plot = T, print.thres 
 (c) (Bonus) Assess the fit using other relevant metrics. Use quantitative measures and show clean and interpretable figures!
 
 
+```{r F1 score, fig.cap="\\label{fig:f1_score} The F1 scores and precisions of five classification methods.", out.width="80%",}
+picCut_F1=data.frame(names = names(Cut_F1), value = Cut_F1) %>% arrange(desc(value)) %>% 
+ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model F1 Score of Horizontal Cut Data", x = "", y = "F1 Score") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
+picCut_pr=data.frame(names = names(Cut_pr), value = Cut_F1) %>% arrange(desc(value)) %>% 
+ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model Precision of Horizontal Cut Data", x = "", y = "Precision") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
+picKM_F1=data.frame(names = names(KM_F1), value = Cut_F1) %>% arrange(desc(value)) %>% 
+ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model F1 Score of K-means Data", x = "", y = "F1 Score") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
+picKM_pr=data.frame(names = names(KM_pr), value = Cut_F1) %>% arrange(desc(value)) %>% 
+ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model Precision of K-means Data",x = "", y = "Precision") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
+
+grid.arrange(arrangeGrob(picCut_F1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         picCut_pr + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         picKM_F1 + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         picKM_pr + ggeasy::easy_center_title() + theme(legend.position="none"),
+                         nrow = 2))
+```
 
 
 \section{Diagnostics}
@@ -960,10 +1019,14 @@ confusionMatrix(ind_test$test_prediction, ind_test$Cloud01)
 
 \subsection{Conclusion}
 
-(e) Write a paragraph for your conclusion.
+<!-- (e) Write a paragraph for your conclusion. -->
+
+Overall, there are various methods that we have tried to employ on this Arctic cloud classification problem. Among the methods discussed in this report, boosting trees yield the best performance on the training and test data. A well-trained boosting tree model could achieve over 95% accuracy when predicting cloud. Logistic regression is also a good method in this context, particularly for the less time it needs to train models. Other classification methods, for example LDA, QDA, and Naive Bayes, are less preferable, mostly because the structure of image data, with cloud and non-cloud pixels, does not satisfy the assumptions of these models. There are other methods that could potentially be examined, such as KNN, SVM, and random forest, which are suggested as future directions of our work. 
 
 
-Overall, there are various methods that we can try to employ on the cloud classification problem. Of the methods discussed in this report, boosting trees yield the best performance on the training and test data. 
+\section{Reproducibility}
+
+In order to ensure the reproducibility and applicability of our work on future MISR data, we have published our codes and model analysis on GitHub. Users may use the following link to visit our repository: https://github.com/sheny2/STA521-Project-2. The repository contains detailed codes and a README file, which illustrates our workflows as well as guides to reproduce our analysis.
 
 
 \section{Graphic Appendix}
@@ -1031,17 +1094,6 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
              nrow = 1)
 ```
 
-
-<!-- \section{Reproducibility} -->
-
-<!-- In addition to a writeup of the above results, please submit a zip file containing everything necessary to reproduce your writeup to Gradescope “PROJ2 code”. Specifically, imagine that at some point an error is discovered in the three image files, and a future researcher wants to check whether your results hold up with the new, corrected image files. This researcher should be able to easily re-run all your code and produce all your figures and tables. This zip file should contain: -->
-
-
-<!-- (i) the raw Latex, Rnw, Qmd or Word used to generate your report, -->
-
-<!-- (ii) your R code (with CVmaster function in a separate R file), -->
-
-<!-- (iii) a README.md file describing, in detail, how to reproduce your paper from scratch (assume researcher has access to the images). -->
 
 \section{Reference}
 
