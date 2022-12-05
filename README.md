@@ -50,3 +50,12 @@ The ROC curve of the model's prediction of test data and true test data's label 
 In addition, ROC curves are useful in determining the cut-off values, particuarly for logistic regression and boosting trees. We find the best cuf-off threshold based on the Youden statistics.
 
 Other model assessment metrics we use include precision and F1 scores, both of which support the claim that the boosting trees yield better performance in predicting cloud pixels. 
+
+## Prediction
+
+Following our analysis and model fitting, users may use a well-trained classification model to predict cloud on image data. There are, of course, chances of missclassification in the prediction. 
+
+<img width="715" alt="Screenshot 2022-12-05 at 3 17 13 PM" src="https://user-images.githubusercontent.com/67173948/205734813-cb647579-2aaa-4acd-95af-87ac8f2457a9.png">
+
+
+
