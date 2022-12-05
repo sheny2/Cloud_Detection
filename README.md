@@ -1,4 +1,4 @@
-# See from Sky: Examining Cloud Detection Algorithms on MISR Data
+# See from the Sky: Examining Cloud Detection Algorithms on Arctic MISR Data
 
 This project is a case study of constructing cloud detection algorithms employed on satellite images. 
 
@@ -21,8 +21,7 @@ The second method of blocked data splitting is to use the K-means algorithm. By 
 <img width="759" alt="Screenshot 2022-11-30 at 10 45 04 PM" src="https://user-images.githubusercontent.com/67173948/205300382-255e3809-82cc-481c-ae99-1bca18e16a33.png">
 
 
-
-There are, of course, other ways of splitting blocked data. We recommend future users to try to fit classification methods on different ways of data processing and verify that the CV results should be roughly similiar. 
+There are, of course, other ways of splitting blocked data. We recommend future users to try to fit classification methods on different ways of data processing and verify that the CV results should be roughly similar. 
 
 
 ## Usage of `CVmaster.R`:
@@ -48,4 +47,6 @@ In addition to the CV training accuracy, there are more metrics that can be used
 
 The ROC curve of the model's prediction of test data and true test data's label can reveal how the model perform on the test data via the Area under the Curve (AUC). Based on our current data and methods, boosting trees usually yield the best results. We recommend users to carefully examine more than one assessments when fitting the classification methods on new image data.
 
-In addition, ROC curves are useful in determining the cut-off values, particuarly for logistic regression and boosting trees. We find the best cuf-off threshold based on the Youden statistics.  
+In addition, ROC curves are useful in determining the cut-off values, particuarly for logistic regression and boosting trees. We find the best cuf-off threshold based on the Youden statistics.
+
+Other model assessment metrics we use include precision and F1 scores, both of which support the claim that the boosting trees yield better performance in predicting cloud pixels. 
