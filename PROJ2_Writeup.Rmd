@@ -472,7 +472,7 @@ Image_Test_KM$Cloud01 <- factor(ifelse(Image_Test_KM$Cloud == "-1", "0", Image_T
 levels(Image_Test_KM$Cloud01) <- c("0", "1")
 ```
 
-```{r test ROC, fig.cap="\\label{fig:ROCs} ROC curves on the test data (the first row is models trained on horizontal cut data, the second row is trained on K-means splitted data)", message = F, fig.height=6,fig.width=15}
+```{r test ROC, fig.cap="\\label{fig:ROCs} ROC curves on the test data (the first row is models trained on horizontal cut data, the second row is trained on K-means splitted data)", message = F, fig.height=6,fig.width=15, out.width="101%"}
 load("final_boost_All.RData")
 load("final_boost_KM.RData")
 
@@ -618,23 +618,27 @@ Despite accuracy often being one of the most significant metric for classificati
 \text{Precision} = \frac{\text{True Positiveness}}{\text{True Positiveness + False Positiveness}}
 \end{equation}
 
-A higher precision reflects a model's ability to avoid false positiveness. 
+A higher precision reflects a model's ability to avoid false positiveness, i.e. classifying a non-cloud pixels as cloudy. 
 
-F1 score, on the other hand, is defined as
+F1 score, on the other hand, combines the precision and recall of a classifier into a single metric by taking their harmonic mean. It is defined as
 
 \begin{equation}
 \text{F1} = \frac{\text{True Positiveness}}{\text{True Positiveness} + \frac{1}{2}(\text{False Positiveness+False Negativeness})}
 \end{equation}
 
-A high F1 score indicates the model's ability to identify positive classses while minimizing error. Precisions and F1 score of our final models are plotted in Figure \ref{fig:f1_score} in descending order.
-```{r F1 score, fig.cap="\\label{fig:f1_score} The F1 scores and precisions of five classification methods.", out.width="80%",}
+A high F1 score indicates the model's ability to identify positive classes while minimizing errors. The precision and F1 score of our final models are plotted in Figure \ref{fig:f1_score} in descending order.
+
+```{r F1 score, fig.cap="\\label{fig:f1_score} The F1 scores and precisions of five classification methods.", out.width="90%",}
 picCut_F1=data.frame(names = names(Cut_F1), value = Cut_F1) %>% arrange(desc(value)) %>% 
 ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model F1 Score of Horizontal Cut Data", x = "", y = "F1 Score") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
-picCut_pr=data.frame(names = names(Cut_pr), value = Cut_F1) %>% arrange(desc(value)) %>% 
-ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model Precision of Horizontal Cut Data", x = "", y = "Precision") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
-picKM_F1=data.frame(names = names(KM_F1), value = Cut_F1) %>% arrange(desc(value)) %>% 
+
+picCut_pr=data.frame(names = names(Cut_pr), value = Cut_pr) %>% arrange(desc(value)) %>% 
+ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model Precision of Horizontal Cut Data", x = "", y = "Precision") + coord_cartesian(ylim = c(0.8,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
+
+picKM_F1=data.frame(names = names(KM_F1), value = KM_F1) %>% arrange(desc(value)) %>% 
 ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model F1 Score of K-means Data", x = "", y = "F1 Score") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
-picKM_pr=data.frame(names = names(KM_pr), value = Cut_F1) %>% arrange(desc(value)) %>% 
+
+picKM_pr=data.frame(names = names(KM_pr), value = KM_pr) %>% arrange(desc(value)) %>% 
 ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model Precision of K-means Data",x = "", y = "Precision") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
 
 grid.arrange(arrangeGrob(picCut_F1 + ggeasy::easy_center_title() + theme(legend.position="none"),
@@ -651,7 +655,7 @@ Boosting algorithm has the highest F1 score and precision under all circumstance
 
 In the previous model comparison section, it has been determined that boosting tree is the best model for this specific classification problem. We will further discuss the hyperparameter selection process and model convergence of boosting in this section.
 
-There are three major hyperparameters in our Boosting Trees model: the depth of weak learners, learning rate, and number of weak learners. These hyperparameters are selected through the process of 10-Fold validation. Learning rate is adjusted in the range of 0.01 to 0.1, depth in the range of 2 to 4, and number of trees from 500 to 2500. CV result suggests that a learning rate of 0.05 with 2000 depth 4 trees produces the best model. With the best parameters in hand, we want to further assess model convergence by adjusting the number of trees and compare the respective test and train errors. In Figure \ref{fig:converge_plot}, number of trees are adjusted from 1 to 10000 and misclassification errors are plotted.
+There are three major hyperparameters in our Boosting Trees model: the depth of weak learners, learning rate, and number of weak learners. These hyperparameters are selected through the process of 10-Fold validation. Learning rate is adjusted in the range of 0.01 to 0.1, depth in the range of 2 to 4, and number of trees from 500 to 2500. CV result suggests that a learning rate of 0.05 with 2000 trees, each having a max depth of 4, produces the best model. With the best parameters in hand, we want to further assess model convergence by adjusting the number of trees and compare the respective test and train errors. In Figure \ref{fig:converge_plot}, number of trees are adjusted from 1 to 10000 and misclassification errors are plotted.
 
 
 ```{r, eval=F}
@@ -798,7 +802,7 @@ mean(test_label == Image_Test_KM$Cloud01)
 ```
 
 
-```{r converge plot, fig.cap="\\label{fig:converge_plot} Missclassfication errros v.s. number of iterations", fig.width = 12, fig.height = 4, out.width="88%"}
+```{r converge plot, fig.cap="\\label{fig:converge_plot} Misclassfication errros v.s. number of iterations", fig.width = 12, fig.height = 4, out.width="88%"}
 par(mfrow = c(1, 2))
 load("train_accuracy_KM.RData")
 load("test_accuracy_KM.RData")
@@ -806,13 +810,14 @@ load("test_accuracy_KM.RData")
 plot(seq(1, 10001, 1000), 1 - train_accuracy_KM, type = "l", ylab = "Train MisClassification Error", xlab = "Number of Iterations")
 plot(seq(1, 10001, 1000), 1 - test_accuracy_KM, type = "l", ylab = "Test MisClassification Error", xlab = "Number of Iterations")
 ```
-Distinct patterns can be observed in the two figure above. Training error maintains a decreasing trend as the number of weak learners increases. Since XGBoost put more weight on misclassfied points, each new weak learner aims to correct previous mistakes. Thus more weak learners would result in decreasing training errors. Test error, on the other hand, start to increase after number of weak learner exceeds 2000. This result aligns with our intuition as overfitting occurs occurs with growing model complexity, resulting in increased test error as shown in the test error plot. These two plots demonstrates that the chosen model parameter is the optimal that ensures model convergence while avoids overfitting. 
 
-\subsection{Patterns of Missclassification}
+Distinct patterns can be observed in the two figure above. Training error maintains a decreasing trend as the number of weak learners increases. Since XGBoost put more weight on misclassfied points, each new weak learner aims to correct previous mistakes. Thus more weak learners would result in decreasing training errors. Test error, on the other hand, start to increase after the number of weak learner exceeds 2000. This result aligns with our intuition as overfitting occurs occurs with growing model complexity, resulting in increased test error as shown in the test error plot. These two plots demonstrates that the chosen model parameter is the optimal that ensures model convergence while avoids overfitting. 
+
+\subsection{Patterns of Misclassification}
 
 In this section, we conduct a detailed analysis of misclassifications. Figure \ref{fig:pred_plot} is a plot of model prediction on all the data points, with misclassified points plotted in yellow. 
 
-```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels in each image using a trained boosting trees model, with those missclassified points highlighted as yellow color.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
+```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels in each image using a trained boosting trees model, with those misclassified points highlighted as yellow color.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
 # prediction plot
 Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
 levels(Image_all_KM$Cloud01) <- c("0", "1")
@@ -895,17 +900,22 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
                          nrow = 1),
              map_legend, nrow = 2, heights = c(10, 1))
 ```
-Most classifications occur near the classification boundaries, where between class differences are less observable. Compare this result to Figure \ref{fig:image_1}, \ref{fig:image_2}, \ref{fig:image_3}, it can be seen that areas with high misclassification error are indeed hard to differentiate base on covariate values. The confusion matrix of the proposed model is presented below.
+
+Most classifications occur near the classification boundaries, where between class differences are less observable. Compare this result to Figure \ref{fig:image_1}, \ref{fig:image_2}, \ref{fig:image_3} from Appendix, it can be seen that areas with frequent misclassification errors are indeed hard to differentiate base on covariate values. The confusion matrix of the proposed model is presented below (assuming expert label is the truth).
 
 ```{r}
 conf.mat <- confusionMatrix(Image_all_KM$all_prediction, Image_all_KM$Cloud01)
 
+row.names(conf.mat$table) <- c("Predicted No Cloud","Predicted Cloud")
+
 knitr::kable(conf.mat$table,
-    caption = "Confusion Matrix", col.names = c("True Non-Cloud","True Cloud"),
+    caption = "Confusion Matrix of Boosting Trees Predictions", 
+    col.names = c("True Non-Cloud","True Cloud"),
     booktabs = T ) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
 ```
-A large proportion of the misclassifications (4699 out of 7412) occur as model misclassifies pixels of land into cloud (False Positive). To investigate the reason behind this phenomenon, we began by analyzing the most relevant covariates in the model. 
+
+A large proportion of the misclassifications (4699 out of 7412) occur as the model misclassifies pixels of land into cloud (False Positive). To investigate the reason behind this phenomenon, we began by analyzing the most relevant covariates in the model. 
 
 ```{r importance plot, fig.cap="\\label{fig:importance_plot}The feature importance plot in boosting trees.", fig.width=12, fig.height=3.5}
 par(mfrow = c(1, 2)) 
@@ -935,6 +945,7 @@ xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_Cut[, 4:11])),
 
 xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = final_boost_KM), main = "Boosting trees on K-means data", cex.main = 0.75, cex.lab = 0.5, cex.axis = 0.5)
 ```
+
 Figure \ref{fig:importance_plot} is the importance plot of our boosting models. In both scenarios, `NDAI`, `logSD` and `CORR` are the most influential covariates. Figure \ref{fig:tree_vis} in the Appendix is a visualization of the first weak learner in the boosting model. The first split on `NDAI` is able to reduce total loss by more than 60 percent, indicating that `NDAI` is the most significant predictor. LogSD and `CORR` also further reduces the loss function by a observable amount. After identifying the most relevant covariates, we plot their density in the misclassified points.
 
 ```{r correct plot, fig.cap="\\label{fig:correct_plot}The feature density plot of correctly and wrongly predicted pixels.", fig.height=3, fig.width=12}
@@ -1040,7 +1051,7 @@ confusionMatrix(ind_test$test_prediction, ind_test$Cloud01)
 
 <!-- (e) Write a paragraph for your conclusion. -->
 
-In this paper, we employed various methods on this Arctic cloud classification problem, inclduing Logistic Regression, LDA, QDA, Naive Bayes, and XGBoost. Model fit is assessed through performance metrics including accuracy, ROC, F1 score and re=precision. Among the methods discussed in this report, boosting trees yield the best performance on the training and test data. A well-trained boosting tree model could achieve over 95% prediction accuracy. Logistic regression is also a good method in this context, particularly for its benefit of lower computational complexity. Other classification methods, for example LDA, QDA, and Naive Bayes, are less preferable, mostly because the structure of image data, with cloud and non-cloud pixels, does not satisfy the assumptions of these models. There are other methods that could potentially be examined, such as KNN, SVM, and random forest. Moreover, a combination of method might provide a better result, which is suggested as future directions of our work. 
+In this paper, we employed various methods on this Arctic cloud classification problem, inclduing Logistic Regression, LDA, QDA, Naive Bayes, and XGBoost. Model fit is assessed through performance metrics including accuracy, ROC, F1 scores and precision. Among the methods discussed in this report, boosting trees yield the best performance on the training and test data. A well-trained boosting tree model could achieve over 95% prediction accuracy. Logistic regression is also a good method in this context, particularly for its benefit of lower computational complexity. Other classification methods, for example LDA, QDA, and Naive Bayes, are less preferable, mostly because the structure of image data, with cloud and non-cloud pixels, does not satisfy the assumptions of these models. There are other methods that could potentially be examined, such as KNN, SVM, and random forest. Moreover, a combination of method might provide a better result, which is suggested as future directions of our work. 
 
 
 \section{Reproducibility}
