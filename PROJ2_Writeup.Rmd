@@ -618,13 +618,15 @@ Despite accuracy often being one of the most significant metric for classificati
 \text{Precision} = \frac{\text{True Positiveness}}{\text{True Positiveness + False Positiveness}}
 \end{equation}
 
-A higher precision reflects a model's ability to avoid False Positiveness. F1 score, on the other hand, is 
+A higher precision reflects a model's ability to avoid false positiveness. 
+
+F1 score, on the other hand, is defined as
 
 \begin{equation}
 \text{F1} = \frac{\text{True Positiveness}}{\text{True Positiveness} + \frac{1}{2}(\text{False Positiveness+False Negativeness})}
 \end{equation}
 
-A high F1 score indicates the model's ability to identify positive classses while minimizing error. The Precisions and F1 score of our final models are plotted in Figure \ref{fig:f1_score} in descending order.
+A high F1 score indicates the model's ability to identify positive classses while minimizing error. Precisions and F1 score of our final models are plotted in Figure \ref{fig:f1_score} in descending order.
 ```{r F1 score, fig.cap="\\label{fig:f1_score} The F1 scores and precisions of five classification methods.", out.width="80%",}
 picCut_F1=data.frame(names = names(Cut_F1), value = Cut_F1) %>% arrange(desc(value)) %>% 
 ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model F1 Score of Horizontal Cut Data", x = "", y = "F1 Score") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
