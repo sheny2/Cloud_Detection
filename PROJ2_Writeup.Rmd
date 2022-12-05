@@ -15,7 +15,7 @@ bibliography: cloud.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, cache = T, warning = F, message = F)
+knitr::opts_chunk$set(echo = F, cache = F, warning = F, message = F)
 library(mosaic)
 library(caret)
 library(gridExtra)
@@ -430,27 +430,27 @@ As shown in our code appendix and github repository, our `CVmaster` function is 
 
 <!--(a) Try several classification methods and assess their fit using cross-validation (CV). Provide a commentary on the assumptions for the methods you tried and if they are satisfied in this case. Since CV does not have a validation set, you can merge your training and validation set to fit your CV model. Report the accuracies across folds (and not just the average across folds) and the test accuracy. CV-results for both the ways of creating folds (as answered in part 2(a)) should be reported. Provide a brief commentary on the results. Make sure you honestly mention all the classification methods you have tried. -->
 
-In this section, different machine learning algorithms including logistic regression, LDA, QDA, Naive Bayes, and gradient boosting are used to construct the classification model. Hyperparameters are selected base on cross validation accuracies. Performance is assessed through both CV error and prediction accuracy on the test data. A comparison across model fit is also conducted utilizing various performance metrics including AUC and Gini Index.
+In this section, different machine learning algorithms including logistic regression, LDA, QDA, Naive Bayes, and gradient boosting are used to construct the classification model. Hyperparameters are selected base on cross validation accuracies. Performance is assessed through both CV error and prediction accuracy on the test data. A comparison across model fit is also conducted utilizing various performance metrics including AUC, precision, and F1 score.
 
 \subsection{Model Fitting}
-Before fitting the chosen classification algorithms, we first assess different model assumptions and their fitness on the given data set. Logistic regression assumes linearity in the classification log odds. Although such a strong assumption is not satisfied by the data, we can adjust the classification threshold to still achieve a desirable accuracy. LDA assumes predictors in different classes follow normal distributions with the same covariance matrix $\Sigma$ but different means $\mu_j$, while QDA allows distinct class covariance matrices $\Sigma_j$. From Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}, we can observe that covariants are hardly normal. Thus LDA and QDA's assumption of normality is unsatisfied here. Naive Bayes makes the assumption that conditional on the class labels, predictors follow iid normal distributions. Such a assumption is also unsatisfied base on Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}. Random Forest, on the other hand, do not have any model assumptions, and should be able to provide good results.
+Before fitting the chosen classification algorithms, we first assess different model assumptions and their fitness on the given data set. Logistic regression assumes linearity in the classification log odds and a linear decision boundary. Although such a strong assumption is not satisfied by the data, we can adjust the classification threshold to still achieve a desirable accuracy. LDA assumes predictors in different classes follow normal distributions with the same covariance matrix $\Sigma$ but different means $\mu_j$, while QDA allows distinct class covariance matrices $\Sigma_j$. From Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}, we can observe that covariants are hardly normal. Thus LDA and QDA's assumption of normality is unsatisfied here. Naive Bayes makes the assumption that conditional on the class labels, predictors follow iid normal distributions. Such a assumption is also unsatisfied base on Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}. Random Forest, on the other hand, do not have any model assumptions, and should be able to provide good results.
 
-After assessment of model assumption fitness, different classifications methods are applied to the data set. For Boosting Tree algorithm, hyperparameters including max-depth of each weak learner, number of weak learners, and the  learning rate are tuned through K-fold validation. For algorithms that returns the classification probability, we determine the model threshold by consulting the Youden statistics which maximized the sum of specificity and sensitivity. Both CV and test accuracies are displayed in the following table:
+After assessment of model assumption fitness, different classifications methods are applied to the data set. For Boosting Tree algorithm, hyperparameters including max-depth of each weak learner, number of weak learners, and the learning rate are tuned through K-fold validation. For algorithms that returns classification probabilities, we determine the model threshold by consulting the Youden statistics which maximized the sum of specificity and sensitivity. Using hyperparameters with minimal CV error, we construct our final models on the entire training dataset and compute the respective test accuracies. Both CV and test accuracies are displayed in the following table:
 ```{r}
 # all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% 
 #   dplyr::select(-CV.Average, -Test.Accuracy)
 all_result <- read.csv("all_result.csv")
 knitr::kable(all_result,
     caption = "10-fold CV Results and Test Accuracy based on Two ways of Data Splitting",
-    booktabs = T ) %>%
+    booktabs = T,linesep="") %>%
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center", font_size = 5)
 ```
 
-As displayed in the table, Boosting Trees algorithm achieve the best CV and Test errors. This result aligns with our expectation as Boosting Tree has the weakest model assumption thus is able to fit data well. LDA, QDA, Naive Bayes, on the other hand, have a lower accuracy since their model assumptions are unsatisfied by the data. Logistic regression has a relatively low CV mean while a higher test accuracy, an explainable result since CV classification threshold is set to 0.5 while final model threshold is adjusted by Youden statistics.
+As displayed above, Boosting Trees algorithm achieve the best CV and Test errors. This result aligns with our expectation as Boosting Tree has the weakest model assumption thus is able to fit data well. LDA, QDA, Naive Bayes, on the other hand, have a lower accuracy since their model assumptions are unsatisfied by the data. Logistic regression has a slightly better performance, an explainable result since its classification threshold is adjusted by Youden statistics.
 
-\subsection{ROC Curves}
+\subsection{Model comparision with ROC Curves}
 
-(b) Use ROC curves to compare the different methods. Choose a cutoff value and highlight it on the ROC curve. Explain your choice of the cutoff value.
+With final models being constructed, we comparison model fits with ROC curves and AUC values as in Figure \ref{fig:ROCs}. The decision threashold for logistic regression and Boosting Trees are also plotted on the curve.
 
 ```{r}
 load("Image_all_Cut.RData")
@@ -606,11 +606,17 @@ KM_pr=c(glmKMrec,LDAKMrec,QDAKMrec,NBKMrec,xgbKMrec)
 names(KM_F1)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
 names(KM_pr)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
 ```
+It can be observed that Boosting Algorithm has the best ROC curve and a best AUC value of 0.989. LDA and QDA have similar ROC curves with AUC values of 0.838 and 0.853, worse than Boosting as their normality assumptions are unsatisfied by data. Naive Bayes has the worst AUC value due to its strongest model assumption. A large change in AUC curve can be observed for logistic model. Thus its model sensitivity to data splitting method might create unstability in the model. Overall, Boosting has the higherst ROC value and is the most reliable model.
 
-\subsection{More Model Assessments}
+\subsection{Comparision of Model Fit}
 
-(c) (Bonus) Assess the fit using other relevant metrics. Use quantitative measures and show clean and interpretable figures!
+Despite accuracy being one of the most significant metric for classification models, other performance metrics provide valuable information concerning the overall model fit. In this section, we compare model performances based on their previsions and F1 scores. Precision measure the percentage of true positive among all positive predictions and is calculated as 
 
+\begin{equation}
+Precision = \frac{True Positiveness}{True Positiveness + False Positiveness}
+\end{equation}
+
+A higher precision reflects a model's ability to avoid False Positiveness. 
 
 ```{r F1 score, fig.cap="\\label{fig:f1_score} The F1 scores and precisions of five classification methods.", out.width="80%",}
 picCut_F1=data.frame(names = names(Cut_F1), value = Cut_F1) %>% arrange(desc(value)) %>% 
