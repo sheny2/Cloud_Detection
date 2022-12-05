@@ -18,6 +18,7 @@ library(ggfortify)
 library(gridExtra)
 library(MASS)
 library(e1071)
+library(DiagrammeR)
 library(class)
 library(tree)
 library(randomForest)
@@ -1419,4 +1420,18 @@ p1
 
 ## Testing
 
+```{r}
+final_boost_All <- xgboost(
+  data = as.matrix(Image_Train_Cut[, 4:11]),
+  label = as.matrix(Image_Train_Cut$Cloud01),
+  max.depth = 4,
+  eta = 0.05,
+  nrounds = 3000,
+  verbose = F, nthread = parallel::detectCores(),
+  objective = "binary:logistic",
+  colsample_bytree = 1,
+)
+xgb.plot.tree(model = final_boost_All, trees = 1000, plot_width = 1000, plot_height = 1000)
+
+```
 

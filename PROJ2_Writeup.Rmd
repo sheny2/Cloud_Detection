@@ -606,18 +606,23 @@ KM_pr=c(glmKMrec,LDAKMrec,QDAKMrec,NBKMrec,xgbKMrec)
 names(KM_F1)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
 names(KM_pr)=c("Logistic Regression","LDA","QDA","Naive Bayes","Boosting Trees")
 ```
-It can be observed that Boosting Algorithm has the best ROC curve and a best AUC value of 0.989. LDA and QDA have similar ROC curves with AUC values of 0.838 and 0.853, worse than Boosting as their normality assumptions are unsatisfied by data. Naive Bayes has the worst AUC value due to its strongest model assumption. A large change in AUC curve can be observed for logistic model. Thus its model sensitivity to data splitting method might create unstability in the model. Overall, Boosting has the higherst ROC value and is the most reliable model.
+It can be observed from the above figure that Boosting Algorithm has the best ROC curve and AUC value of 0.989. It's classification threshold is 0.472, slightly lower than 0.5. LDA and QDA have similar ROC curves with AUC values of 0.838 and 0.853, worse than Boosting as their normality assumptions are unsatisfied by data. Naive Bayes has the worst performance due to its strongest model assumption. A large change in AUC curve can be observed in logistic regression model, indicating its sensitivity to data splitting method might incur instability. Overall, Boosting has the higherst ROC value and is the most reliable model.
 
 \subsection{Comparision of Model Fit}
 
-Despite accuracy being one of the most significant metric for classification models, other performance metrics provide valuable information concerning the overall model fit. In this section, we compare model performances based on their previsions and F1 scores. Precision measure the percentage of true positive among all positive predictions and is calculated as 
+Despite accuracy being one of the most significant metric for classification models, other performance metrics provide valuable information concerning the overall model fit. In this section, we compare model performances based on precisions and F1 scores. Precision measure the percentage of true positive among all positive predictions and is calculated as 
 
 \begin{equation}
 Precision = \frac{True Positiveness}{True Positiveness + False Positiveness}
 \end{equation}
 
-A higher precision reflects a model's ability to avoid False Positiveness. 
+A higher precision reflects a model's ability to avoid False Positiveness. F1 score, on the other hand, is 
 
+\begin{equation}
+F1 = \frac{True Positiveness}{True Positiveness + \frac{1}{2}(False Positiveness+False Negativeness)}
+\end{equation}
+
+A high F1 score indicates the model's ability to identify positive classses while minimizing error. The Precisions and F1 score of our final models are plotted in Figure \ref{fig:f1_score} in descending order.
 ```{r F1 score, fig.cap="\\label{fig:f1_score} The F1 scores and precisions of five classification methods.", out.width="80%",}
 picCut_F1=data.frame(names = names(Cut_F1), value = Cut_F1) %>% arrange(desc(value)) %>% 
 ggplot(aes(x = reorder(names, -value),y = value))+geom_bar(stat="identity",width=0.5) + labs(title="Model F1 Score of Horizontal Cut Data", x = "", y = "F1 Score") + coord_cartesian(ylim = c(0.85,1))+theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 5),plot.title=element_text(size=10))
@@ -634,13 +639,17 @@ grid.arrange(arrangeGrob(picCut_F1 + ggeasy::easy_center_title() + theme(legend.
                          picKM_pr + ggeasy::easy_center_title() + theme(legend.position="none"),
                          nrow = 2))
 ```
-
+Boosting algorithm has the highest F1 score and precision under all circumstances, indicating it is the best model for this classification problem. Naive Bayes, on the other hand, has the worst performance. An interesting observation is that QDA and LDA has better model performance than logistic regression with respect to F1 score and precision. This results demonstrates that accuracy might be insufficient in determining model fit. Combining results from previous sections, we can conclude that Boosting is the best classification model for this particular classification problem.
 
 \section{Diagnostics}
 
 \subsection{Examining Boosting Trees}
 
-(a) Do an in-depth analysis of a good classification model of your choice by showing some diagnostic plots or information related to convergence or parameter estimation.
+In the previous model comparison section, it has been determined that boosting tree is the best model for this specific classification problem. We will further discuss the hyperparameter selection process and model convergence of boosting in this section.
+
+There are 3 major hyper parameters in our boosting model: depth of weak learners, learning rate, and number of weak learners. These hyper parameters are selected through the process of 10-Fold validation. Learning rate is adjusted in the range of 0.01 to 0.1, depth in the range of 2 to 4, and number of trees from 500 to 2500. CV result suggests that a learning rate of 0.05 with 2000 depth 4 trees produces the best model. With the best parameters in hand, we want to further assess model convergence by adjusting the number of trees and compare the respective test and train errors. In 
+Figure \ref{fig:converge_plot}, number of trees are adjusted from 1 to 10000 and misclassification errors are plotted.
+
 
 ```{r,message=F,warning=F,cache=T, eval=F}
 set.seed(4577)
@@ -794,10 +803,11 @@ load("test_accuracy_KM.RData")
 plot(seq(1, 10001, 1000), 1 - train_accuracy_KM, type = "l", ylab = "Train MisClassification Error", xlab = "Number of Iterations")
 plot(seq(1, 10001, 1000), 1 - test_accuracy_KM, type = "l", ylab = "Test MisClassification Error", xlab = "Number of Iterations")
 ```
+Distinct patterns can be observed in the two figure above. Training error maintains a decreasing trend as the number of weak learners increases. Since XGBoost put more weight on misclassfied points, each new weak learner aims to correct previous mistakes. Thus more weak learners would result in decreasing training errors. Test error, on the other hand, start to increase after number of weak learner exceeds 2000. This result aligns with our intuition as overfitting occurs occurs with growing model complexity, resulting in increased test error as shown in the test error plot. These two plots demonstrates that the chosen model parameter is the optimal that ensures model convergence while avoids overfitting. 
 
 \subsection{Patterns of Missclassification}
 
-(b) For your best classification model(s), do you notice any patterns in the misclassification errors? Again, use quantitative and visual methods of analysis. Do you notice problems in particular regions, or in specific ranges of feature values?
+In this section, we conduct a detailed analysis of misclassifications. Figure \ref{fig:pred_plot} is a plot of model prediction on all the data points, with misclassified points plotted in yellow. 
 
 ```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels using boosting trees, with missclassified points highlighted as yellow color.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
 # prediction plot
@@ -882,7 +892,7 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
                          nrow = 1),
              map_legend, nrow = 2, heights = c(10, 1))
 ```
-
+Most classifications occur near the classification boundaries, where between class differences are less observable. Compare this result to Figure \ref{fig:image_1}, \ref{fig:image_2}, \ref{fig:image_3}, it can be seen that areas with high misclassification error are indeed hard to differentiate base on covariate values. The confusion matrix of the proposed model is presented below.
 
 ```{r}
 conf.mat <- confusionMatrix(Image_all_KM$all_prediction, Image_all_KM$Cloud01)
@@ -892,7 +902,7 @@ knitr::kable(conf.mat$table,
     booktabs = T ) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
 ```
-
+A large proportion of the misclassifications occur as model misclassifies pixel of land into cloud. To investigate the reason behind this phenomenon, we began by analyzing the most relevant covariates in the model. 
 
 ```{r importance plot, fig.cap="\\label{fig:importance_plot}The feature importance plot in boosting trees.", fig.height=3,fig.width=9}
 par(mfrow = c(1, 2)) 
@@ -922,7 +932,7 @@ xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_Cut[, 4:11])),
 
 xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = final_boost_KM), main = "Boosting trees on K-means data", cex.main = 0.5, cex.lab = 0.5, cex.axis = 0.5)
 ```
-
+Figure \ref{fig:importance_plot} is the importance plot of our boosting models. In both scenarios, NDAI, logSD and CORR are the most influential covariates. Figure \ref{fig:tree_vis} in the Appendix is a visualization of the first weak learner in the boosting model. The first split on NDAI is able to reduce total loss by more than 60 percent, indicating that NDAI is the most significant predictor. LogSD and CORR also further reduces the loss function by a observable amount. After identifying the most relevant covariates, we plot their density in the misclassified points.
 
 ```{r correct plot, fig.cap="\\label{fig:correct_plot}The feature density plot of correctly and wrongly predicted pixels.", fig.height=3, fig.width=12}
 C1 <- Image_all_KM %>% mutate(Correctness = ifelse(all_prediction == Cloud01, "Correct Prediction", "Wrong Prediction")) %>% 
@@ -953,14 +963,11 @@ grid.arrange(arrangeGrob(C1 + ggeasy::easy_center_title() + theme(legend.positio
 
 ```
 
+Figure \ref{fig:correct_plot} is a covariate density plot, with red indicating correctly classfied points and blue being misclassified data. It can be seen that misclassification mainly occur in the upper range of NDAI and logSD, while equally distributes with respect to CORR. Such pattern suggests that models with even strong NDAI and logSD dominance might be preferable. Base on this result, we propose several ways to further improve our proposed classfier.
 
-\subsection{Better Classifier}
+\subsection{Model Improvements}
 
-(c) Based on parts 4(a) and 4(b), can you think of a better classifier? How well do you think your model will work on future data without expert labels?
-
-With low CV and test errors, the proposed XGboost model framework will have a robust performance in future classification of unlabeled data points. Our block data splitting approach provides the functionality of mimicing a new data set. Thus the reported CV and test errors are reliable estimates of model accuracy. 
-
-Despite the high model accuracy, there are two potential improvements. One potential improvement is to add $L_1$ or $L_2$ regularization terms to reduce model complexity. A simpler model potentially reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
+Despite a high model accuracy, there are three potential improvements that can be made to further improve the proposed classifier. The first potential improvement is dimension reduction. As seen in the EDA plots, there are strong correlation between the angular covariates. A dimension reduction might be able to avoid repeatation of information and further strengthen the dominance of most relevant predictors. Another potential improvement is to add $L_1$ or $L_2$ regularization for model complexity reduction. A simpler model potentially reduces model variance and avoids over-fitting. Moreover, a combination of supervised and unsupervised learning methods might be beneficial. Observing that spatially close data points tend to share the same classification label we propose the following procedure for classification:
 
 \begin{description}
 \item[Step 1.] Utilize pre-trained XGBoost Classifier on the desired data set to get the classification probability $p_i$ for each data point $i$. \\ 
@@ -970,12 +977,11 @@ Despite the high model accuracy, there are two potential improvements. One poten
 
 This methods would avoid false classification of data points within a cluster of same-class data and therefore increase the overall accuracy. However, it does not provide any performance improvements over datapoints on the cluster boundary.
 
+Even without these improvements, the proposed XGboost model framework will have a robust performance in future classification of unlabeled data points. Since the employed block data splitting approach mimics providing a new image, the reported CV and test errors are reliable estimates of model accuracy. 
+
 \subsection{Modefied way of data splitting}
 
-(d) Do your results in parts 4(a) and 4(b) change as you modify the way of splitting the data?
-
-
-[what if the data is splitted independently?]
+Similar to the discussion in the previous section, block splitting is a more reliable technique as test data sets can be viewed as new images to classify. If data is considered to be iid, however, model behavior would be quite different. Suppose tst data is chosen randomly, test and training data would be geographically close to each other thus have similar covariates values. This similarity between train and test data would result in a unreliable test error. For the same model convergence plot in Section 4.1, test error would keep decreasing with the training error there is no dissimilarity between testing and training data. Model evaluated under this metric would have weak performance due to overfitting.
 
 ```{r, eval = F}
 set.seed(8848)
@@ -1023,7 +1029,7 @@ confusionMatrix(ind_test$test_prediction, ind_test$Cloud01)
 
 
 
-\subsection{Conclusion}
+\section{Conclusion}
 
 <!-- (e) Write a paragraph for your conclusion. -->
 
@@ -1099,7 +1105,8 @@ grid.arrange(NDAI_plot + ggeasy::easy_center_title(),
              CORR_plot + ggeasy::easy_center_title(),
              nrow = 1)
 ```
-
-
+```{r tree visualization, fig.cap="\\label{fig:tree_vis} Visualization of Weak Learner", out.width="70%"}
+knitr::include_graphics("TREE.png")
+```
 \section{Reference}
 
