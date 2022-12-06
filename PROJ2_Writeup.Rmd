@@ -68,11 +68,11 @@ Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 
 <!-- (a) Write a half-page summary of the paper, including at least the purpose of the study, the data, the collection method, its conclusions and potential impact. -->
 
-With the global climates getting increasingly extreme, humans are making the best use of sciences and technologies to understand the environment, especially in the Arctic region. 
-The detection of clouds in satellite images has become an important task, as cloud coverage is closely related to the surface air temperatures and atmospheric carbon dioxide levels. Yet it is a challenging problem since clouds are similar on snow- and ice-covered surfaces.
-In this study, we are going to examine various classification methods, build reliable models that distinguish the presence of cloud from Arctic satellite images using available features and evaluate our models' performance. 
+With the global climate getting increasingly extreme, humans are making the best use of sciences and technologies to understand the environment, especially in the Arctic region. 
+The detection of clouds in satellite images has become an important task, as cloud coverage is closely related to surface air temperatures and atmospheric carbon dioxide levels. Yet it is a challenging problem since clouds are similar on snow- and ice-covered surfaces.
+In this study, we are going to examine various classification methods, build reliable models that distinguish the presence of clouds from Arctic satellite images using available features and evaluate our models' performance. 
 
-The data is obtained from a study by @yu2008. This team of researchers collected the data via the camera of Multiangle Imaging SpectroRadiometer (MISR) launched by the NASA. The data are in the forms of image pixels, with each MISR pixel covering a 275 m by 275 m region on the ground. 
+The data is obtained from a study by @yu2008. This team of researchers collected the data via the camera of Multiangle Imaging SpectroRadiometer (MISR) launched by NASA. The data are in the form of image pixels, with each MISR pixel covering a 275 m by 275 m region on the ground. 
 Since standard classification frameworks of clouds were not readily applicable, their goal was also to build operational cloud detection algorithms that can efficiently process the massive MISR data set one data unit at a time without requiring human intervention or expert labeling. 
 
 @yu2008 proposed two algorithms, an enhanced linear correlation matching (ELCM) algorithm based on thresholding the three features with values either fixed or data-adaptive, and an ELCM algorithm with Fisher’s quadratic discriminant analysis (ELCM-QDA). 
@@ -138,13 +138,13 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
                          nrow = 1),
              map_legend, nrow = 2, heights = c(10, 1))
 ```
-In this study, we primarily focus on three of the MISR images. These three images contain 115110, 115229 and 115217 pixels respectively. However, not all pixels are labeled with confident experts' classification. As shown in in Figure \ref{fig:map3}, there are considerable portions of images not labeled. We notice the pattern that usually experts have difficulties distinguishing the areas around what they recognize as clouds. It is understandable that the borderlands between cloudy and clear surfaces are more challenging to determine. 
+In this study, we primarily focus on three of the MISR images. These three images contain 115110, 115229, and 115217 pixels respectively. However, not all pixels are labeled with confident experts' classification. As shown in Figure \ref{fig:map3}, there are considerable portions of images not labeled. We notice the pattern that usually experts have difficulties distinguishing the areas around what they recognize as clouds. It is understandable that the borderlands between cloudy and clear surfaces are more challenging to determine. 
 
 We can also observe that labeled clouds are often clustered in chunks. Therefore, adjacent pixels' labels are not independent and instead seem to have very high positive correlations. For example, if a pixel's neighbors are all labeled as clouds, it is highly likely that it is also labeled as part of the cloud. 
 
 In Table 1, we present the percentages of expert labels in each image.
-Since we have no confident expert opinion on unlabeled pixels, they are viewed as missing / unknown values. 
-After removing unlabeled pixels, we have 82148, 70917 and 54996 pixels in each image, with available information (labels and features). 
+Since we have no confident expert opinion on unlabeled pixels, they are viewed as missing/unknown values. 
+After removing unlabeled pixels, we have 82148, 70917, and 54996 pixels in each image, with available information (labels and features). 
 
 ```{r}
 t1 <- image_1 %>% summarise(`Cloud Labels` = mean(Cloud == "1"), `Clear Labels` = mean(Cloud == "-1"), `Unknown` = mean(Cloud == "0")) %>% mutate(Image = "1")
@@ -160,7 +160,7 @@ knitr::kable(rbind(t1, t2, t3),
 ```
 
 
-In specific, each pixel has eight features. The first three are physically useful features for characterizing the scattering properties of ice and snow covered surfaces: the correlation (`CORR`) of MISR images of the same scene from different MISR viewing directions, the standard deviation (`SD`) of MISR nadir camera pixel values across a scene, and a normalized difference angular index (`NDAI`) that characterizes the changes in a scene with changes in the MISR view direction.
+In specific, each pixel has eight features. The first three are physically useful features for characterizing the scattering properties of ice and snow-covered surfaces: the correlation (`CORR`) of MISR images of the same scene from different MISR viewing directions, the standard deviation (`SD`) of MISR nadir camera pixel values across a scene, and a normalized difference angular index (`NDAI`) that characterizes the changes in a scene with changes in the MISR view direction.
 
 The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (DF), $60.0^{\circ}$ (CF), $45.6^{\circ}$ (BF), and $26.1^{\circ}$ (AF) in the forward direction and $0.0^{\circ}$ (AN) in the nadir direction. 
 
@@ -169,7 +169,7 @@ The latter five are five view zenith angles of the cameras. $70.5^{\circ}$ (DF),
 
 <!-- (c) Perform a visual and quantitative EDA of the dataset, e.g., summarizing (i) pair- wise relationship between the features themselves and (ii) the relationship between the expert labels with the individual features. Do you notice differences between the two classes (cloud, no cloud) based on the radiance or other features (CORR, NDAI, SD)? -->
 
-Conducting a EDA on the available features gives a preliminary picture of the relationship within potential predictors as well as with the response. First of all, we notice in Figure \ref{fig:corrplot} that there is positive correlation between the features. The correlation is particularly strong and positive among the five radiance angles. For example, `BF`, `AF` and `AN` are very strongly correlated. We also see positive correlations between `NADI`, `CORR` and `SD`.
+Conducting an EDA on the available features gives a preliminary picture of the relationship within potential predictors as well as with the response. First of all, we notice in Figure \ref{fig:corrplot} that there is a positive correlation between the features. The correlation is particularly strong and positive among the five radiance angles. For example, `BF`, `AF`, and `AN` are very strongly correlated. We also see positive correlations between `NADI`, `CORR`, and `SD`.
 
 However, the correlations between the first three features (`NADI`, `CORR` and `SD`) and five radiance angles (`Df`, `CF`, `BF`, `AF`, `AN`) are mostly negative.
 
@@ -185,7 +185,7 @@ ggcorrplot(hc.order = TRUE)
 #   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
 ```
 
-Figure \ref{fig:hist_cov} shows that for pixels labeled as cloud, their `NADI`, `CORR` and `SD` are likely to be higher than those labeled as no cloud. This distinct pattern provides strong support to use these features as predictors of our classification models. It also seems reasonable to have a log transformation of `SD` so that it is in a similar scale as other features. 
+Figure \ref{fig:hist_cov} shows that for pixels labeled as cloud, their `NADI`, `CORR` and `SD` are likely to be higher than those labeled as no cloud. This distinct pattern provides strong support for using these features as predictors of our classification models. It also seems reasonable to have a log transformation of `SD` so that it is in a similar scale as other features. 
 
 ```{r hist covariate, fig.cap="\\label{fig:hist_cov}Density distributions of three features that describe cloud and clear pixels.", fig.width=9, fig.height=3.3, out.width="92%"}
 hist_1 <- All_Image %>% 
@@ -211,7 +211,7 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
              nrow = 2)
 ```
 
-In terms of other features, we can see that the density distributions of radiance angles of cloud and cloud-free pixels are pretty consistent across angles in Figure \ref{fig:hist_cov2}. The radiance angles of cloud pixels are usually wider and right skewed, whereas the radiance angles of cloud-free pixels are usually higher and distributed in a bimodal shape. The distributions between cloud and cloud-free pixels are not as separable and distinct as the first three features. 
+In terms of other features, we can see that the density distributions of radiance angles of cloud and cloud-free pixels are pretty consistent across angles in Figure \ref{fig:hist_cov2}. The radiance angles of cloud pixels are usually wider and right-skewed, whereas the radiance angles of cloud-free pixels are usually higher and distributed in a bimodal shape. The distributions between cloud and cloud-free pixels are not as separable and distinct as the first three features. 
 
 ```{r hist covariate2, fig.cap="\\label{fig:hist_cov2}Density distributions of radiance angles from cloud and clear pixels.", fig.width=10, fig.height=3}
 hist_1 <- All_Image %>% 
@@ -254,7 +254,7 @@ Before building models, it is important to prepare the data as training, validat
 The key idea of our data splitting is to take into account the fact that this data set is not i.i.d. Therefore, we propose the two following ways of dividing data into blocks. 
 
 
-**Method 1. Horizontal Cuts**: The first method cuts each image horizontally in order to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. 
+**Method 1. Horizontal Cuts**: The first method cuts each image horizontally to ensure that every resulting block has a reasonable portion of clouds and clear surfaces. 
 Basically, each image is cut into five blocks by evenly dividing Y coordinates (shown in Figure \ref{fig:cut_split}), and three of them would be used as training data, the rest two blocks are used as validation and testing respectively.
 This method splits the data into 58.59% training data, 19.03% validation data and 22.38% testing data (roughly 3:1:1). 
 
@@ -302,7 +302,7 @@ Image_all_Cut <- rbind(Cut_1, Cut_2, Cut_3)
 ```
 
 
-**Method 2. K-means Clusters**: The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image's datapoints into five distinct groups (according to X-Y coordinates). Again, shown in Figure \ref{fig:kmean_split}, three of these are used for training data, one is for validation and the last one is for testing. The K-means method splits all datapoints into 60.72% training data, 20.04% validation data and 19.24% testing data. 
+**Method 2. K-means Clusters**: The second method of blocked data splitting is to use the K-means algorithm. By selecting a cluster size of five, we can divide each image's data points into five distinct groups (according to X-Y coordinates). Again, shown in Figure \ref{fig:kmean_split}, three of these are used for training data, one is for validation and the last one is for testing. The K-means method splits all data points into 60.72% training data, 20.04% validation data, and 19.24% testing data. 
 
 ```{r split 2, fig.cap="\\label{fig:kmean_split}The second data splitting method is to divide based on the K-means algorithm.", fig.width=12, fig.height=4, out.width="90%"}
 set.seed(8848)
@@ -367,7 +367,7 @@ knitr::kable(
 
 <!-- Report the accuracy of a trivial classifier which sets all labels to -1 (cloud-free) on the validation set and on the test set. In what scenarios will such a classifier have high average accuracy? Hint: Such a step provides a baseline to ensure that the classification problems at hand is not trivial. -->
 
-We can examine the accuracy of a trivial classifier which sets all labels to -1 on the validation set and on the test set as shown in the table below. This classifier assumes that the image has no cloud pixels at all. Logically, the accuracy, or the success rate, of this trivial classifier depends entirely on the percentage of actual cloud free pixels labeled in the data. If the image is mostly cloud free, then labeling all points as -1 would easily achieve a high accuracy. 
+We can examine the accuracy of a trivial classifier that sets all labels to -1 on the validation set and on the test set as shown in the table below. This classifier assumes that the image has no cloud pixels at all. Logically, the accuracy, or the success rate, of this trivial classifier depends entirely on the percentage of actual cloud-free pixels labeled in the data. If the image is mostly cloud-free, then labeling all points as -1 would easily achieve high accuracy. 
 
 ```{r accuaracy of trival predictor}
 cut_v <- Image_all_Cut %>% 
@@ -397,7 +397,7 @@ knitr::kable(rbind(cut_v, cut_t, km_v, km_t)[,c(3,1,2)],
   kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
 ```
 
-Here it is shown that labeling all points as -1 can only achieve an accuracy of 66.15% and 67.04% on the test data sets, which shows that to achieve high accuracy in this classification problem is not trivially easy. This also sets a baseline of reference for our subsequent classification methods. 
+Here it is shown that labeling all points as -1 can only achieve an accuracy of 66.15% and 67.04% on the test data sets, which shows that achieving high accuracy in this classification problem is not trivially easy. This also sets a baseline of reference for our subsequent classification methods. 
 
 \subsection{First order importance}
 
@@ -407,7 +407,7 @@ We consider `NADI`, `CORR` and `logSD` (notice that we apply a log transformatio
 
 Then we also examine the pair-wise correlation between the response, `Cloud`, and each of the eight features. Looking at the two bottom rows in Figure \ref{fig:corrplot_cloud}, we notice that the correlation between `Cloud` and `NADI`, `CORR` and `logSD` are much stronger than the other five features. 
 
-```{r pariwise cloud, fig.cap="\\label{fig:corrplot_cloud} Pair-wise correlations between response (Cloud) and features (eight covaraites).", out.width="50%"}
+```{r pariwise cloud, fig.cap="\\label{fig:corrplot_cloud} Pair-wise correlations between response (Cloud) and features (eight covariates).", out.width="50%"}
 All_Image$logSD <- log(All_Image$SD)
 model.matrix(~0+., data=All_Image %>% 
 dplyr::select(-Y_coord, -X_coord)  %>% 
@@ -430,12 +430,12 @@ As shown in our code appendix and GitHub repository, our `CVmaster` function is 
 
 <!--(a) Try several classification methods and assess their fit using cross-validation (CV). Provide a commentary on the assumptions for the methods you tried and if they are satisfied in this case. Since CV does not have a validation set, you can merge your training and validation set to fit your CV model. Report the accuracies across folds (and not just the average across folds) and the test accuracy. CV-results for both the ways of creating folds (as answered in part 2(a)) should be reported. Provide a brief commentary on the results. Make sure you honestly mention all the classification methods you have tried. -->
 
-In this section, different machine learning algorithms including logistic regression, LDA, QDA, Naive Bayes, and gradient boosting are used to construct the classification model. Hyperparameters are carefully selected base on cross validation accuracies. Performance is assessed through both CV error and prediction accuracy on the test data. A comparison across model fit is also conducted utilizing various performance metrics including the Area Under the Curve (AUC), precision, and F1 scores.
+In this section, different machine learning algorithms including logistic regression, LDA, QDA, Naive Bayes, and gradient boosting are used to construct the classification model. Hyperparameters are carefully selected based on cross validation accuracies. Performance is assessed through both CV error and prediction accuracy on the test data. A comparison across model fit is also conducted utilizing various performance metrics including the Area Under the Curve (AUC), precision, and F1 scores.
 
 \subsection{Model Fitting}
-Before fitting the chosen classification algorithms, we first assess different model assumptions and their fitness on the given data set. Logistic regression assumes linearity in the classification log odds and a linear decision boundary. Although such a strong assumption is not satisfied by the data, we can adjust the classification threshold to still achieve a desirable accuracy. LDA assumes predictors in different classes follow normal distributions with the same covariance matrix, $\Sigma$, but different means, $\mu_j$, while QDA allows distinct class covariance matrices $\Sigma_j$. From Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}, we can observe that the distributions of covariants are hardly normal. Thus, LDA and QDA's assumption of normality is unsatisfied here. Naive Bayes makes the assumption that conditional on the class labels, predictors follow i.i.d normal distributions. Such a assumption is also unsatisfied base on Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}. Tree-based models, for example the Boosting Trees, on the other hand, do not have any model assumptions, and should be able to provide good results.
+Before fitting the chosen classification algorithms, we first assess different model assumptions and their fitness on the given data set. Logistic regression assumes linearity in the classification log odds and a linear decision boundary. Although such a strong assumption is not satisfied by the data, we can adjust the classification threshold to still achieve a desirable accuracy. LDA assumes predictors in different classes follow normal distributions with the same covariance matrix, $\Sigma$, but different means, $\mu_j$, while QDA allows distinct class covariance matrices $\Sigma_j$. From Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}, we can observe that the distributions of covariants are hardly normal. Thus, LDA and QDA's assumption of normality is unsatisfied here. Naive Bayes makes the assumption that conditional on the class labels, predictors follow i.i.d normal distributions. Such an assumption is also unsatisfied base on Figure \ref{fig:hist_cov} and \ref{fig:hist_cov2}. Tree-based models, for example the Boosting Trees, on the other hand, do not have any model assumptions, and should be able to provide good results.
 
-After assessment of model assumption fitness, different classifications methods are applied to the data set. For Boosting Tree algorithm, hyperparameters including max-depth of each weak learner, number of weak learners, and the learning rate are tuned through K-fold validation. For algorithms that returns classification probabilities, we determine the model threshold by consulting the Youden statistics which maximized the sum of specificity and sensitivity. Using our `CVmaster` function and selecting hyperparameters with minimal cross validation error, we construct our final models on the entire training dataset and compute the respective test accuracies. Both CV and test accuracies are displayed in the following table:
+After the assessment of model assumption fitness, different classification methods are applied to the data set. For Boosting Tree algorithm, hyperparameters including max-depth of each weak learner, the number of weak learners, and the learning rate are tuned through K-fold validation. For algorithms that return classification probabilities, we determine the model threshold by consulting the Youden statistics which maximized the sum of specificity and sensitivity. Using our `CVmaster` function and selecting hyperparameters with minimal cross validation errors, we construct our final models on the entire training dataset and compute the respective test accuracies. Both CV and test accuracies are displayed in the following table:
 
 ```{r}
 # all_result <- read.csv("all_result.csv") %>% mutate(Cv.mean = CV.Average, Test = Test.Accuracy) %>% 
@@ -447,11 +447,11 @@ knitr::kable(all_result,
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center", font_size = 6)
 ```
 
-As displayed above, Boosting Trees algorithm achieves the best CV and Test errors. This result aligns with our expectation as the Boosting Trees model has the weakest model assumption thus is able to fit data well. LDA, QDA, Naive Bayes, on the other hand, have a lower accuracy since their model assumptions are unsatisfied by the data. Logistic regression has a slightly better performance, an explainable result since its classification threshold is adjusted by Youden statistics.
+As displayed above, Boosting Trees algorithm achieves the best CV and Test errors. This result aligns with our expectation as the Boosting Trees model has the weakest model assumption thus is able to fit data well. LDA, QDA, and Naive Bayes, on the other hand, have a lower accuracy since their model assumptions are unsatisfied by the data. Logistic regression has a slightly better performance, an explainable result since its classification threshold is adjusted by Youden statistics.
 
 \subsection{Model Comparison with ROC Curves}
 
-With final models being constructed, we comparison model fits with ROC curves and AUC values as in Figure \ref{fig:ROCs}. The decision thresholds (cut-off values used for predicted probabilities) for logistic regression and Boosting Trees are also plotted on the curve, as shown in Figure \ref{fig:ROCs}.
+With final models being constructed, we compare model fits with ROC curves and AUC values as in Figure \ref{fig:ROCs}. The decision thresholds (cut-off values used for predicted probabilities) for logistic regression and Boosting Trees are also plotted on the curve, as shown in Figure \ref{fig:ROCs}.
 
 ```{r}
 load("Image_all_Cut.RData")
@@ -668,7 +668,7 @@ Boosting algorithm has the highest F1 score and precision under all circumstance
 
 In the previous model comparison section, it has been determined that boosting tree is the best model for this specific classification problem. We will further discuss the hyperparameter selection process and model convergence of boosting in this section.
 
-There are three major hyperparameters in our Boosting Trees model: the depth of weak learners, learning rate, and number of weak learners. These hyperparameters are selected through the process of 10-Fold validation. Learning rate is adjusted in the range of 0.01 to 0.1, depth in the range of 2 to 4, and number of trees from 500 to 2500. CV result suggests that a learning rate of 0.05 with 2000 trees, each having a max depth of 4, produces the best model. With the best parameters in hand, we want to further assess model convergence by adjusting the number of trees and compare the respective test and train errors. In Figure \ref{fig:converge_plot}, number of trees are adjusted from 1 to 10000 and misclassification errors are plotted.
+There are three major hyperparameters in our Boosting Trees model: the depth of weak learners, learning rate, and number of weak learners. These hyperparameters are selected through the process of 10-Fold validation. Learning rate is adjusted in the range of 0.01 to 0.1, depth in the range of 2 to 4, and number of trees from 500 to 2500. CV result suggests that a learning rate of 0.05 with 2000 trees, each having a max depth of 4, produces the best model. With the best parameters in hand, we want to further assess model convergence by adjusting the number of trees and comparing the respective test and train errors. In Figure \ref{fig:converge_plot}, the number of trees are adjusted from 1 to 10000 and misclassification errors are plotted.
 
 
 ```{r, eval=F}
@@ -815,7 +815,7 @@ mean(test_label == Image_Test_KM$Cloud01)
 ```
 
 
-```{r converge plot, fig.cap="\\label{fig:converge_plot} Misclassfication errros v.s. number of iterations", fig.width = 12, fig.height = 4, out.width="88%"}
+```{r converge plot, fig.cap="\\label{fig:converge_plot} Misclassfication errors v.s. number of iterations", fig.width = 12, fig.height = 4, out.width="88%"}
 par(mfrow = c(1, 2))
 load("train_accuracy_KM.RData")
 load("test_accuracy_KM.RData")
@@ -824,13 +824,13 @@ plot(seq(1, 10001, 1000), 1 - train_accuracy_KM, type = "l", ylab = "Train MisCl
 plot(seq(1, 10001, 1000), 1 - test_accuracy_KM, type = "l", ylab = "Test MisClassification Error", xlab = "Number of Iterations")
 ```
 
-Distinct patterns can be observed in the two figure above. Training error maintains a decreasing trend as the number of weak learners increases. Since XGBoost put more weight on misclassified points, each new weak learner aims to correct previous mistakes. Thus more weak learners would result in decreasing training errors. Test error, on the other hand, start to increase after the number of weak learners exceeds 2000. This result aligns with our intuition as overfitting occurs with growing model complexity, resulting in increased test error as shown in the test error plot. These two plots demonstrates that the chosen model parameter is the optimal that ensures model convergence while avoids overfitting. 
+Distinct patterns can be observed in the two figures above. Training error maintains a decreasing trend as the number of weak learners increases. Since XGBoost put more weight on misclassified points, each new weak learner aims to correct previous mistakes. Thus more weak learners would result in decreasing training errors. Test error, on the other hand, start to increase after the number of weak learners exceeds 2000. This result aligns with our intuition as overfitting occurs with growing model complexity, resulting in increased test error as shown in the test error plot. The two plots above demonstrate that the chosen model parameter is the optimum that ensures model convergence while avoiding overfitting. 
 
 \subsection{Patterns of Misclassification}
 
 In this section, we conduct a detailed analysis of misclassifications. Figure \ref{fig:pred_plot} is a plot of model prediction on all the data points, with misclassified points plotted in yellow. 
 
-```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels in each image using a trained boosting trees model, with those misclassified points highlighted as yellow color.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
+```{r prediction plot, fig.cap="\\label{fig:pred_plot} Prediction of cloud pixels in each image using a trained boosting trees model, with those misclassified points highlighted in yellow.", fig.width = 12, fig.height = 4, out.width="85%", eval  = T, message = F}
 # prediction plot
 Image_all_KM$Cloud01 <- factor(ifelse(Image_all_KM$Cloud == "-1", "0", Image_all_KM$Cloud))
 levels(Image_all_KM$Cloud01) <- c("0", "1")
@@ -914,7 +914,7 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
              map_legend, nrow = 2, heights = c(10, 1))
 ```
 
-Most classifications occur near the classification boundaries, where between class differences are less observable. Compare this result to Figure \ref{fig:image_1}, \ref{fig:image_2}, \ref{fig:image_3} from Appendix, it can be seen that areas with frequent misclassification errors are indeed hard to differentiate based on covariate values. The confusion matrix of the proposed model is presented below (assuming expert label is the truth).
+Most classifications occur near the classification boundaries, where between-class differences are less observable. Comparing this result to Figure \ref{fig:image_1}, \ref{fig:image_2}, \ref{fig:image_3} from Appendix, it can be seen that areas with frequent misclassification errors are indeed hard to differentiate based on covariate values. The confusion matrix of the proposed model is presented below (assuming expert labels are the truth).
 
 ```{r}
 conf.mat <- confusionMatrix(Image_all_KM$all_prediction, Image_all_KM$Cloud01)
@@ -959,7 +959,7 @@ xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_Cut[, 4:11])),
 xgb.plot.importance(xgb.importance(colnames(as.matrix(Image_Train_KM[, 4:11])), model = final_boost_KM), main = "Boosting trees on K-means data", cex.main = 0.75, cex.lab = 0.5, cex.axis = 0.5)
 ```
 
-Figure \ref{fig:importance_plot} is the importance plot of our boosting models. In both scenarios, `NDAI`, `logSD` and `CORR` are the most influential covariates. Figure \ref{fig:tree_vis} in the Appendix is a visualization of the first weak learner in the boosting model. The first split on `NDAI` is able to reduce total loss by more than 60 percent, indicating that `NDAI` is the most significant predictor. LogSD and `CORR` also further reduces the loss function by a observable amount. After identifying the most relevant covariates, we plot their density in the misclassified points.
+Figure \ref{fig:importance_plot} is the importance plot of our boosting models. In both scenarios, `NDAI`, `logSD` and `CORR` are the most influential covariates. Figure \ref{fig:tree_vis} in the Appendix is a visualization of the first weak learner in the boosting model. The first split on `NDAI` is able to reduce total loss by more than 60 percent, indicating that `NDAI` is the most significant predictor. `LogSD` and `CORR` also further reduce the loss function by an observable amount. After identifying the most relevant covariates, we plot their density in the misclassified points.
 
 ```{r correct plot, fig.cap="\\label{fig:correct_plot}The feature density plot of correctly and wrongly predicted pixels.", fig.height=3, fig.width=12}
 C1 <- Image_all_KM %>% mutate(Correctness = ifelse(all_prediction == Cloud01, "Correct Prediction", "Wrong Prediction")) %>% 
@@ -990,11 +990,11 @@ grid.arrange(arrangeGrob(C1 + ggeasy::easy_center_title() + theme(legend.positio
 
 ```
 
-Figure \ref{fig:correct_plot} is a covariate density plot, with red indicating correctly classfied points and blue being misclassified data. It can be seen that misclassification mainly occur in the upper range of `NDAI` and `logSD`, while equally distributes with respect to `CORR.` Such pattern suggests that models with even strong `NDAI` and `logSD` dominance might be preferable. Based on this result, we propose several ways to further improve our proposed classfier.
+Figure \ref{fig:correct_plot} is a covariate density plot, with red indicating correctly classified points and blue being misclassified data. It can be seen that misclassification mainly occurs in the upper range of `NDAI` and `logSD`, while equally distributes with respect to `CORR.` Such a pattern suggests that models with even strong `NDAI` and `logSD` dominance might be preferable. Based on this result, we propose several ways to further improve our proposed classifier.
 
 \subsection{Model Improvements}
 
-Despite a high model accuracy, there are three potential improvements that can be made to further improve the proposed classifier. The first potential improvement is dimension reduction. As seen in the EDA plots, there are strong correlation between the angular covariates. A dimension reduction might be able to avoid repetition of information or correlated variables and further strengthen the dominance of most relevant predictors. However, dimension reduction techniques such as PCA would complicate the interpretability of the model. 
+Despite a high model accuracy, there are three potential improvements that can be made to further improve the proposed classifier. The first potential improvement is dimension reduction. As seen in the EDA plots, there are strong correlations between the angular covariates. A dimension reduction might be able to avoid the repetition of information or correlated variables and further strengthen the dominance of the most relevant predictors. However, dimension reduction techniques such as PCA would complicate the interpretability of the model. 
 
 Another potential improvement is to add $L_1$ or $L_2$ regularization for model complexity reduction. A simpler model potentially reduces model variance and avoids over-fitting. Nevertheless, it would require more tuning of a proper regularization parameter and $L_1$ regularization performs variable selection arbitrarily. 
 
@@ -1006,13 +1006,13 @@ Moreover, a combination of supervised and unsupervised learning methods might be
 \item[Step 3.] For the remaining data points $j$, where $LB<p_j<LB$, utilize KNN on geographical coordinates ($X,Y$ in this case) to classify point $j$ to the class of its closet neighbors.
 \end{description}
 
-This methods would avoid false classification of data points within a cluster of same-class data and therefore increase the overall accuracy. However, it does not provide any performance improvements over datapoints on the cluster boundary.
+This method would avoid false classification of data points within a cluster of same-class data and therefore increase the overall accuracy. However, it does not provide any performance improvements over data points on the cluster boundary.
 
 Even without these improvements, the proposed XGboost model framework will have a robust performance in future classification of unlabeled data points. Since the employed block data splitting approach mimics providing a new image, the reported CV and test errors are reliable estimates of model accuracy. 
 
 \subsection{Modefied way of data splitting}
 
-Similar to the discussion in the previous section, block splitting is a more reliable technique as test data sets can be viewed as new images to classify. If data is considered to be i.i.d, however, model behavior would be quite different. Suppose the test data is chosen randomly, test and training data would be geographically close to each other, thus have similar covariates values. This similarity between train and test data would result in a unreliable test error. For the same model convergence plot in Section 4.1, test error would keep decreasing with the training error there is no dissimilarity between testing and training data. Model evaluated under this metric would have weak performance due to overfitting.
+Similar to the discussion in the previous section, block splitting is a more reliable technique as test data sets can be viewed as new images to classify. If data is considered to be i.i.d, however, model behavior would be quite different. Suppose the test data is chosen randomly, test and training data would be geographically close to each other, thus having similar covariates values. This similarity between train and test data would result in an unreliable test error. For the same model convergence plot in Section 4.1, test error would keep decreasing with the training error there is no dissimilarity between testing and training data. Models evaluated under this metric would have weak performance due to overfitting.
 
 ```{r, eval = F}
 set.seed(8848)
@@ -1064,7 +1064,7 @@ confusionMatrix(ind_test$test_prediction, ind_test$Cloud01)
 
 <!-- (e) Write a paragraph for your conclusion. -->
 
-In this paper, we employed various methods on this Arctic cloud classification problem, inclduing Logistic Regression, LDA, QDA, Naive Bayes, and XGBoost. Model fit is assessed through performance metrics including accuracy, ROC, F1 scores and precision. Among the methods discussed in this report, boosting trees yield the best performance on the training and test data. A well-trained boosting tree model could achieve over 95% prediction accuracy. Logistic regression is also a good method in this context, particularly for its benefit of lower computational complexity. Other classification methods, for example LDA, QDA, and Naive Bayes, are less preferable, mostly because the structure of image data, with cloud and non-cloud pixels, does not satisfy the assumptions of these models. There are other methods that could potentially be examined, such as KNN, SVM, and random forest. Moreover, a combination of method might provide a better result, which is suggested as future directions of our work. 
+In this paper, we employed various methods on this Arctic cloud classification problem, including Logistic Regression, LDA, QDA, Naive Bayes, and XGBoost. Model fit is assessed through performance metrics including accuracy, ROC, F1 scores and precision. Among the methods discussed in this report, boosting trees yields the best performance on the training and test data. A well-trained boosting tree model could achieve over 95% prediction accuracy. Logistic regression is also a good method in this context, particularly for its benefit of lower computational complexity. Other classification methods, for example, LDA, QDA, and Naive Bayes, are less preferable, mostly because the structure of image data, with cloud and non-cloud pixels, does not satisfy the assumptions of these models. There are other methods that could potentially be examined, such as KNN, SVM, and random forest. Moreover, a combination of different methods might provide a better result, which is suggested as future directions of our work. 
 
 
 \section{Reproducibility}
