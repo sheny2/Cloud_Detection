@@ -647,7 +647,7 @@ grid.arrange(arrangeGrob(picCut_F1 + ggeasy::easy_center_title() + theme(legend.
                          picKM_pr + ggeasy::easy_center_title() + theme(legend.position="none"),
                          nrow = 2))
 ```
-Boosting algorithm has the highest F1 score and precision under all circumstances, indicating it is the best model for this classification problem. Naive Bayes, on the other hand, has the worst performance. An interesting observation is that QDA and LDA has better model performance than logistic regression with respect to F1 score and precision. This results demonstrates that accuracy might be insufficient in determining model fit. Combining results from previous sections, we can conclude that Boosting is the best classification model for this particular classification problem.
+Boosting algorithm has the highest F1 score and precision under all circumstances, indicating it is the best model for this classification problem. Naive Bayes, on the other hand, has the worst performance. An interesting observation is that QDA and LDA has better F1 score than logistic regression on horizontal cut data. This results demonstrates that accuracy might be insufficient in determining model fit. Combining results from previous sections, we can conclude that Boosting is the best classification model for this particular classification problem.
 
 \section{Diagnostics}
 

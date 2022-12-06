@@ -1435,3 +1435,17 @@ xgb.plot.tree(model = final_boost_All, trees = 1000, plot_width = 1000, plot_hei
 
 ```
 
+```{r}
+library(MLmetrics)
+source("CVmaster.R")
+cv_result = CVmaster(
+  classifier = "Logistic",
+  train_coord = Image_Train_Cut[, 1:2],
+  train_feature = Image_Train_Cut[, c(4:11)],
+  train_label = Image_Train_Cut[, 3],
+  K = 10,
+  loss_fun = "F1 Score"
+)
+```
+
+

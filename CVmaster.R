@@ -95,9 +95,9 @@ CVmaster <-
     {
       # prediction <- list()
       prediction.list <- list()
-      Eta=c(0.06,0.04,0.05)
-      depth = c(2,3,4)
-      ntree= c(1600,2000,2400,3000)
+      Eta=seq(0.01,0.1,0.01)
+      depth = c(2,3,4,5,6)
+      ntree= seq(600,3000,200)
       Accuracy = matrix(NA,length(ntree)*length(Eta)*length(depth),K+1)
       for (q in seq_along(ntree)){
         for (k in seq_along(Eta)){
@@ -164,14 +164,14 @@ CVmaster <-
       if (classifier=="Boosting Tree"){
         for (j in 1:K){
           dat_CV_test = dat %>% filter(fold_index == j)
-          F1[j]=F1_Score(prediction,dat_CV_test$Cloud01)
+          F1[j]=F1_Score(dat_CV_test$Cloud01,prediction[[j]])
         }
         F1[K+1]=mean(F1[1:K])
       }
       else{
         for (j in 1:K){
           dat_CV_test = dat %>% filter(fold_index == j)
-          F1[j]=F1_Score(prediction,dat_CV_test$train_label)
+          F1[j]=F1_Score(dat_CV_test$train_label,prediction[[j]])
         }
         F1[K+1]=mean(F1[1:K])
       }
