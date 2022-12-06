@@ -74,20 +74,6 @@ CVmaster <-
     }
     
     
-    if (classifier == "KNN")
-    {
-      KNN_model <- list()
-      prediction <- list()
-      for (i in 1:K) {
-        dat_CV_train = dat %>% filter(fold_index != i)
-        dat_CV_test = dat %>% filter(fold_index == i)
-        prediction[[i]]=knn(dat_CV_train %>% dplyr::select(-train_label),
-                            dat_CV_test %>% dplyr::select(-train_label),
-                            cl=dat_CV_train$train_label,k=5,use.all=T)
-      }
-    }
-    
-    
     dat$Cloud01 <- factor(ifelse(dat$train_label == "-1", "0", dat$train_label))
     levels(dat$Cloud01) <- c("0", "1")
     

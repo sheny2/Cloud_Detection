@@ -132,9 +132,6 @@ map_3 <- image_3 %>%
   theme_map() + theme(legend.position = "none") +
   labs(title = "Image 3", x = "X Coordinate", y = "Y Coordinate") +
   scale_colour_manual(values = Palette_1)
-# map_1
-# map_2
-# map_3
 ```
 
 ```{r arranged map, fig.width = 12, fig.height = 4}
@@ -145,7 +142,7 @@ grid.arrange(arrangeGrob(map_1 + ggeasy::easy_center_title() + theme(legend.posi
 ```
 
 
-*Better map?*
+*Better map*
 
 ```{r new map}
 Palette_2 <- c("gray", "white")
@@ -274,10 +271,7 @@ image_1 %>%
 Image_1 <- image_1 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_2 <- image_2 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
 Image_3 <- image_3 %>% filter(Cloud != "0") %>% mutate(Cloud = factor(Cloud))
-```
 
-
-```{r}
 dim(Image_1)
 dim(Image_2)
 dim(Image_3)
@@ -301,11 +295,6 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
              hist_2 + ggeasy::easy_center_title(),
              hist_3 + ggeasy::easy_center_title(),
              nrow = 1)
-
-# +
-#   scale_fill_manual(values = c("steelblue1", "hotpink1")) +
-#   scale_color_manual(values = c("steelblue1", "hotpink1")) +
-#   theme_bw()
 
 hist_1 <- Image_1 %>% 
   ggplot(aes(x = SD)) +
@@ -417,13 +406,6 @@ grid.arrange(hist_1 + ggeasy::easy_center_title(),
 
 
 #### Make a table of availble data: 
-<!-- image 1  -->
-<!-- 115110 total -->
-<!-- 82148 Without 0  -->
-<!-- 16430 Test -->
-<!-- 65718 Train -->
-<!-- 52574 train -->
-<!-- 13144 val -->
 
 
 ```{r index groups, eval = F, echo = F}
@@ -505,8 +487,6 @@ grid.arrange(arrangeGrob(Cut_1_Map + ggeasy::easy_center_title() + theme(legend.
 
 Image_all_Cut <- rbind(Cut_1, Cut_2, Cut_3)
 
-# dim(Image_all_CV)
-
 prop.table(table(Image_all_Cut$Type))
 
 Image_all_Cut %>% 
@@ -586,8 +566,6 @@ knitr::kable(rbind(cut_v, cut_t, km_v, km_t),
     booktabs = T ) %>%
   kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8)
 ```
-
- scenario with high accuracy: all clear in test and validation sets
  
  
 # 2.c
@@ -629,14 +607,34 @@ cor( as.numeric(Image_all_Cut$Cloud), Image_all_Cut$AN)
 ```
 
 
-**For now, choose the first three features.**
+```{r PCA visual}
+trn_pca <- Image_1_train %>% 
+  filter(Cloud != "0") %>% 
+  dplyr::select(-Cloud)  %>% 
+  FactoMineR::PCA(graph = F)
 
-# Use NDAI, CORR and logSD 
+proj <- trn_pca$ind$coord[, 1:2]  %>% 
+  data.frame()  %>% 
+  tibble()  %>% 
+  mutate(Cloud_True = (Image_1_train %>% 
+  filter(Cloud != "0") )$Cloud)
+
+p1 <- proj %>% 
+  ggplot(aes(x = Dim.1, y = Dim.2)) +
+  geom_point(aes(color = Cloud_True)) +
+  labs(x = "PC1", y = "PC2", title = "PCA Projections") 
+
+p2 <- plot(trn_pca, choix = "var")
+
+p1
+```
+
+Best are NDAI, CORR and logSD 
 
 
 # 2d CV Master
 
-
+Refer to the R file. 
 
 
 # 3. Model Fitting & Validation
@@ -654,9 +652,6 @@ Image_Test_KM <- Image_all_KM %>%  filter(Type == "Test")
 
 
 ### call CVmaster from separate R file
-
-# Remeber to transform variables! log
-
 
 ```{r, warning=F}
 set.seed(8848)
@@ -893,7 +888,6 @@ CVmaster(
 
 # ROC 
 
-
 ```{r}
 source("ROC.R")
 ```
@@ -964,9 +958,6 @@ roc(Image_Test_KM$Cloud, preds, print.auc = T, plot = T, print.thres = t[[1]], m
 ```
 
 
-
-
-
 ```{r}
 library(pROC)
 
@@ -1021,47 +1012,7 @@ roc_knn[[i]] <- ROC(
 ```
 
 
-#decision tree
-```{r}
-set.seed(8848)
-
-tree_cls <- tree(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut)
-# summary(tree_cls)
-plot(tree_cls)
-text(tree_cls, pretty=0)
-
-
-pred_y_tree_test <- predict(tree_cls, Image_Test_Cut, 'class')
-accuracy <- sum(pred_y_tree_test == Image_Test_Cut$Cloud)/nrow(Image_Test_Cut)
-accuracy
-
-
-tree_cls <- tree(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_KM)
-# summary(tree_cls)
-plot(tree_cls)
-text(tree_cls, pretty=0)
-
-
-pred_y_tree_test <- predict(tree_cls, Image_Test_KM, 'class')
-accuracy <- sum(pred_y_tree_test == Image_Test_KM$Cloud)/nrow(Image_Test_KM)
-accuracy
-```
-
-#random forest
-```{r}
-rf_cls <- randomForest(Cloud ~ NDAI + logSD + CORR + DF + CF + BF + AF + AN , data=Image_Train_Cut, importance = TRUE)
-rf_cls
-
-pred_y_rf_test <- predict(rf_cls, Image_Test_Cut)
-accuracy <- sum(pred_y_rf_test == Image_Test_Cut$Cloud)/nrow(Image_Test_Cut)
-
-accuracy
-varImpPlot(rf_cls)
-
-```
-
-
-#boosted tree
+# Boosted tree
 
 ```{r}
 Image_Train_Cut$Cloud01 <- factor(ifelse(Image_Train_Cut$Cloud == "-1", "0", Image_Train_Cut$Cloud))
@@ -1110,7 +1061,6 @@ roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = 0.49557
 
 prediction <- as.numeric(pred > 0.5)
 test_accuracy <- mean(prediction == Image_Test_Cut$Cloud01)
-
 
 
 # KM
@@ -1173,7 +1123,6 @@ pred <- predict(boost_model, as.matrix(Image_Test_KM[, 4:11]))
 # Cut ROC
 # roc(Image_Test_Cut$Cloud01, pred, print.auc = T, plot = T, print.thres = 0.49478)
 # pROC::coords(roc(Image_Test_Cut$Cloud01, pred), "best", best.method=c("closest.topleft"), transpose = FALSE)
-
 
 prediction <- as.numeric(pred > t[[1]])
 test_accuracy <- mean(prediction == Image_Test_KM$Cloud01)
@@ -1246,14 +1195,12 @@ boost_model <- xgboost(
 all_pred <- predict(boost_model, as.matrix(Image_all_KM[, 4:11]))
 Image_all_KM$all_prediction <- as.factor(as.numeric(all_pred > 0.5))
 
-
 # roc_boosting <- roc(Image_all_KM$Cloud01, all_pred)
 # plot(roc_boosting)
 # pROC::coords(roc_boosting, best.method=c("youden"))
 
 
 pROC::coords(roc_boosting, "best", transpose = FALSE)
-
 ```
 
 ```{r, fig.width = 12, fig.height = 4, out.width="85%"}
@@ -1287,8 +1234,8 @@ grid.arrange(arrangeGrob(map1 + ggeasy::easy_center_title() + theme(legend.posit
              map_legend, nrow = 2, heights = c(10, 1))
 ```
 
+# Old boost code
 
-# old boost code
 ```{r}
 gbm_train_plot = function(d = 2){
 # note that we need to make sure gbm labels are between 0 and 1, and integers
@@ -1316,8 +1263,7 @@ geom_line(aes(x=Bs, y=test_err))+ ylim(0.1, 0.25)
 gbm_train_plot(d=2)
 ```
 
-
-## all result
+## All result
 
 ```{r}
 all_result <- rbind(result_logit_Cut, result_logit_KM,
@@ -1391,30 +1337,6 @@ mean(predict(QDA_model, Image_1_test)$class != Image_1_test$Cloud)
 naive_bayes <- naiveBayes(Cloud ~ NDAI + SD + CORR, 
                 data=Image_1_train)
 mean(predict(naive_bayes, Image_1_test) != Image_1_test$Cloud)
-```
-
-
-
-```{r PCA visual}
-trn_pca <- Image_1_train %>% 
-  filter(Cloud != "0") %>% 
-  dplyr::select(-Cloud)  %>% 
-  FactoMineR::PCA(graph = F)
-
-proj <- trn_pca$ind$coord[, 1:2]  %>% 
-  data.frame()  %>% 
-  tibble()  %>% 
-  mutate(Cloud_True = (Image_1_train %>% 
-  filter(Cloud != "0") )$Cloud)
-
-p1 <- proj %>% 
-  ggplot(aes(x = Dim.1, y = Dim.2)) +
-  geom_point(aes(color = Cloud_True)) +
-  labs(x = "PC1", y = "PC2", title = "PCA Projections") 
-
-p2 <- plot(trn_pca, choix = "var")
-
-p1
 ```
 
 
