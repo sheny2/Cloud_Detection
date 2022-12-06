@@ -40,6 +40,7 @@ Since it is cross validation, users could also choose K, the number of folds, an
 
 The `CVmaster` function takes the above input and would return the training accuracy at each fold as well as an overall CV average accuracy. The CV accuracy is thus a useful metric of evaluating the performance of the classification method on the training data.
 
+If there are tuning parameters in the model, for example the learning rate, number of weak learners and max depth of each tree in the boosting trees algorithm, our `CVmaster` function is able to fit a range of specified parameter values and yield the best combination of tuned parameters.  
 
 ## More Model Assessment:
 
