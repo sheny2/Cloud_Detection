@@ -55,7 +55,7 @@ Other model assessment metrics we use include precision and F1 scores, both of w
 
 ## Prediction
 
-Following our analysis and model fitting in the codes above, users may use a well-trained classification model to predict cloud on image data. There are, of course, chances of missclassification in the prediction. Genearlly, we expect the boosting tree model to perform well on similar images with around 5% error rate, outperforming most of the other classification methods. 
+Following our analysis and model fitting in the codes above, users may use a well-trained classification model to predict cloud on image data. There are, of course, chances of missclassification in the prediction as shown below. Genearlly, we expect the boosting tree model to perform well on similar images with around 5% error rate, outperforming most of the other classification methods. 
 
 <img width="715" alt="Screenshot 2022-12-05 at 3 17 13 PM" src="https://user-images.githubusercontent.com/67173948/205734813-cb647579-2aaa-4acd-95af-87ac8f2457a9.png">
 
