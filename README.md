@@ -2,6 +2,11 @@
 
 This project is a case study of constructing cloud detection algorithms employed on satellite images. 
 
+Specifically, we are interested in predicting the cloud pixels among image data like the following. 
+
+<img width="852" alt="Screenshot 2022-11-01 at 11 36 59 PM" src="https://user-images.githubusercontent.com/67173948/205805780-cff8dce4-997c-4fd1-b7d9-3adb9a6dfe57.png">
+
+
 We split the data by blocks, employ a number of classfication methods and assess their performance by loss functions. 
 The primary work of model fitting and cross validation (CV) is done via the `CVmaster` function. 
 For any future users who want to reproduce our analysis or train classification methods based on new image data, please refer to the following. 
