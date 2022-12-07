@@ -1,4 +1,4 @@
-# See from the Sky: Examining Cloud Detection Algorithms on Arctic MISR Data
+# See from the Sky: Examining Cloud Detection Algorithms on the Arctic MISR Data
 
 This project is a case study of constructing cloud detection algorithms employed on satellite images. 
 
